@@ -69,6 +69,8 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
     // 新增：用于统计的状态
     var charCount by remember { mutableStateOf(0) }
     var elapsedTime by remember { mutableStateOf(0L) }
+    // 新增一个状态，用来控制密钥管理对话框的显示和隐藏
+    var showKeyDialog by remember { mutableStateOf(false) }
     //自动加解密
     LaunchedEffect(inputText) {
         if (inputText.isEmpty()) {
@@ -111,7 +113,10 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
         // 1. 密钥选择器
         KeySelector(
             selectedKeyName = secretKey,
-            onClick = { /* TODO: 在这里处理点击事件，比如弹出一个密钥选择对话框 */ }
+            onClick = {
+                // 当点击时，将状态设置为true，以显示对话框
+                showKeyDialog = true
+            }
         )
 
         Spacer(modifier = Modifier.height(24.dp))

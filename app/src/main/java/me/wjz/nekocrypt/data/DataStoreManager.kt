@@ -2,6 +2,9 @@ package me.wjz.nekocrypt.data
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -20,6 +23,18 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 //建立一个LocalDataStoreManager的CompositionLocal，专门给ComposeUI用的
 val LocalDataStoreManager = staticCompositionLocalOf<DataStoreManager> {
     error("No DataStoreManager provided")
+}
+
+/**
+ * ✨ [新增] 一个专门用于在Compose上下文中，以State的形式订阅密钥数组变化的Hook。
+ *
+ * @param initialValue 当Flow还在加载时的初始默认值。
+ * @return 一个 State<Array<String>> 对象，它的 .value 会随着DataStore的变化而自动更新。
+ */
+@Composable
+fun rememberKeyArrayState(initialValue: Array<String> = emptyArray()): State<Array<String>> {
+    val dataStoreManager = LocalDataStoreManager.current
+    return dataStoreManager.getKeyArrayFlow().collectAsState(initial = initialValue)
 }
 
 class DataStoreManager(private val context: Context) {
@@ -60,7 +75,7 @@ class DataStoreManager(private val context: Context) {
     }
 
     /**
-     * 获取密钥数组
+     * 获取密钥数组，用于后台的上下文。
      */
     fun getKeyArrayFlow(): Flow<Array<String>> {
         return getSettingFlow(SettingKeys.ALL_THE_KEYS, "[]").map { jsonString ->

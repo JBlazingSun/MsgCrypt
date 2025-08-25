@@ -322,7 +322,7 @@ fun SliderSettingItem(
     step: Long, // 单步步长
     modifier: Modifier = Modifier,
 ) {
-    // 使用你的 Hook 来自动同步 DataStore
+    // 使用 Hook 来自动同步 DataStore
     var currentValue by rememberDataStoreState(key, defaultValue)
 
     Card(

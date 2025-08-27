@@ -52,6 +52,7 @@ import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
 import me.wjz.nekocrypt.hook.rememberDataStoreState
+import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
 import me.wjz.nekocrypt.util.CryptoManager
 import me.wjz.nekocrypt.util.CryptoManager.appendNekoTalk
 
@@ -230,6 +231,10 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
                 charCount = charCount,
                 elapsedTime = elapsedTime
             )
+        }
+
+        if(showKeyDialog){
+            KeyManagementDialog(onDismissRequest = { showKeyDialog = false })
         }
     }
 }

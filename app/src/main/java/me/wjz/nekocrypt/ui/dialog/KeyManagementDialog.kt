@@ -33,7 +33,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,7 +57,6 @@ import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.data.LocalDataStoreManager
 import me.wjz.nekocrypt.data.rememberKeyArrayState
 import me.wjz.nekocrypt.hook.rememberDataStoreState
-import java.nio.file.WatchEvent
 
 
 @Composable
@@ -214,3 +215,69 @@ private fun KeyItem(
     }
 }
 
+
+/**
+ * 添加新密钥的对话框
+ */
+@Composable
+private fun AddKeyDialog(
+    onDismiss: () -> Unit,
+    onAddKey: (String) -> Unit
+) {
+    var newKey by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("添加新密钥") },
+        text = {
+            OutlinedTextField(
+                value = newKey,
+                onValueChange = { newKey = it },
+                label = { Text("请输入密钥") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = { onAddKey(newKey) },
+                enabled = newKey.isNotBlank() // 只有输入了内容才能点击
+            ) {
+                Text("添加")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+
+/**
+ * 删除确认对话框
+ */
+@Composable
+private fun DeleteConfirmDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("确认删除") },
+        text = { Text("确定要删除这个密钥吗？此操作不可撤销。") },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("删除")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}

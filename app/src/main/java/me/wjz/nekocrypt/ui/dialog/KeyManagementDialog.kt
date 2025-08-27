@@ -8,10 +8,12 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,6 +53,8 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.SettingKeys
@@ -90,41 +94,57 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
     }
 
     // 我们使用 AlertDialog 作为基础，因为它提供了标准的对话框样式
-     AlertDialog(
+    Dialog(
         onDismissRequest = onDismissRequest,
-        title = { Text("密钥管理") },
-        // 在 text 区域，我们放入自己的滚动列表
-        text = {
-            LazyColumn(
-                contentPadding = PaddingValues(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(keys) { key ->
-                    KeyItem(
-                        keyText = key,
-                        isActive = key == activeKey,
-                        onSetAsActive = { activeKey = key },
-                        onCopy = { clipboardManager.setText(AnnotatedString(key)) },
-                        onDelete = { keyToDelete = key }
-                    )
+        // ✨ 2. [核心修正] 告诉Dialog不要使用平台默认的窄宽度
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        // ✨ 3. [核心修正] 我们自己用Card来构建对话框的UI，并在这里设置宽度
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.9f), // ✨ 设置宽度为屏幕可用宽度的90%
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text(
+                    text = "密钥管理",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyColumn(
+                    modifier = Modifier.weight(1f, fill = false), // 让列表在需要时滚动
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(keys) { key ->
+                        KeyItem(
+                            keyText = key,
+                            isActive = key == activeKey,
+                            onSetAsActive = { activeKey = key },
+                            onCopy = { clipboardManager.setText(AnnotatedString(key)) },
+                            onDelete = { keyToDelete = key }
+                        )
+                    }
                 }
-            }
-        },
-        // 在 confirmButton 区域，我们放入我们的操作按钮
-        confirmButton = {
-            Row {
-                OutlinedButton(onClick = { showAddKeyDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-                    Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("添加")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = onDismissRequest) {
-                    Text("完成")
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    OutlinedButton(onClick = { showAddKeyDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "add", modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                        Text("添加")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = onDismissRequest) {
+                        Text("完成")
+                    }
                 }
             }
         }
-    )
+    }
 
     // --- 用于处理添加和删除的子对话框 ---
     if (showAddKeyDialog) {

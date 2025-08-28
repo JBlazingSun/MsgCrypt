@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -93,7 +94,6 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
         }
     }
 
-    // 我们使用 AlertDialog 作为基础，因为它提供了标准的对话框样式
     Dialog(
         onDismissRequest = onDismissRequest,
         // ✨ 2. [核心修正] 告诉Dialog不要使用平台默认的窄宽度
@@ -189,7 +189,9 @@ private fun KeyItem(
     onDelete: () -> Unit
 ){
     Card(
-        modifier = Modifier.fillMaxWidth().animateContentSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
         shape = RoundedCornerShape(16.dp),
         border = if (isActive) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -198,9 +200,14 @@ private fun KeyItem(
         )
     ){
         Row(
-            modifier = Modifier.clickable(onClick = onSetAsActive).padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier
+                .clickable(
+                    onClick = onSetAsActive,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() })
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
-        ){
+        ) {
             Icon(
                 imageVector = Icons.Default.VpnKey,
                 contentDescription = "密钥图标",

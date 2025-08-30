@@ -7,12 +7,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -102,10 +102,10 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
         // ✨ 3. [核心修正] 我们自己用Card来构建对话框的UI，并在这里设置宽度
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.9f), // ✨ 设置宽度为屏幕可用宽度的90%
+                .fillMaxWidth(0.90f), // ✨ 设置宽度为屏幕可用宽度的90%
             shape = RoundedCornerShape(24.dp)
         ) {
-            Column(modifier = Modifier.padding(24.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = "密钥管理",
                     style = MaterialTheme.typography.headlineMedium,
@@ -113,7 +113,7 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn(
-                    modifier = Modifier.weight(1f, fill = false), // 让列表在需要时滚动
+                    modifier = Modifier.fillMaxHeight(0.6f),
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -127,7 +127,7 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -192,20 +192,17 @@ private fun KeyItem(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         border = if (isActive) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if(isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if(isActive) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
         )
     ){
         Row(
             modifier = Modifier
-                .clickable(
-                    onClick = onSetAsActive,
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() })
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .clickable(onClick = onSetAsActive)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
@@ -219,7 +216,7 @@ private fun KeyItem(
                 text = keyText,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
             )
             AnimatedVisibility(
                 visible = isActive,

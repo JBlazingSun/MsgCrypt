@@ -195,7 +195,7 @@ private fun KeyItem(
         shape = RoundedCornerShape(24.dp),
         border = if (isActive) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         colors = CardDefaults.cardColors(
-            containerColor = if(isActive) MaterialTheme.colorScheme.primaryContainer
+            containerColor = if(isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
             else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f)
         )
     ){
@@ -234,7 +234,7 @@ private fun KeyItem(
                 Icon(Icons.Default.ContentCopy, contentDescription = "复制密钥")
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "删除密钥", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Default.Delete, contentDescription = "删除密钥", tint = MaterialTheme.colorScheme.primary)
             }
         }
     }

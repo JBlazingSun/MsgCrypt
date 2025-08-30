@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,10 +23,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,9 +51,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
@@ -113,7 +115,7 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn(
-                    modifier = Modifier.fillMaxHeight(0.6f),
+                    modifier = Modifier.heightIn(max = LocalConfiguration.current.screenHeightDp * 0.5.dp),
                     contentPadding = PaddingValues(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -231,10 +233,10 @@ private fun KeyItem(
             }
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(onClick = onCopy) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "复制密钥")
+                Icon(Icons.Outlined.ContentCopy, contentDescription = "复制密钥",tint = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "删除密钥", tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Delete, contentDescription = "删除密钥", tint = MaterialTheme.colorScheme.secondary)
             }
         }
     }

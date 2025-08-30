@@ -52,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +61,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.launch
 import me.wjz.nekocrypt.Constant
+import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.data.LocalDataStoreManager
 import me.wjz.nekocrypt.data.rememberKeyArrayState
@@ -109,7 +111,7 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = "密钥管理",
+                    text = stringResource(R.string.key_management_dialog_key_management),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -137,11 +139,11 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
                     OutlinedButton(onClick = { showAddKeyDialog = true }) {
                         Icon(Icons.Default.Add, contentDescription = "add", modifier = Modifier.size(ButtonDefaults.IconSize))
                         Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                        Text("添加")
+                        Text(stringResource(R.string.key_management_dialog_key_add))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = onDismissRequest) {
-                        Text("完成")
+                        Text(stringResource(R.string.finish))
                     }
                 }
             }

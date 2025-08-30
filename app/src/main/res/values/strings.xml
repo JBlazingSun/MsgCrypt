@@ -9,6 +9,7 @@
     <string name="file_size">文件大小</string>
     <string name="url">URL</string>
     <string name="download">下载</string>
+    <string name="finish">完成</string>
     <string name="downloading">下载中</string>
     <string name="open_file">打开文件</string>
     <string name="cannot_open_file">打开文件失败</string>
@@ -113,4 +114,7 @@
     <string name="dialog_download_file_download_failed">文件下载失败：%s</string>
     <string name="dialog_download_file_file_info">文件详情</string>
 
+    <!--    密钥管理相关-->
+    <string name="key_management_dialog_key_management">密钥管理</string>
+    <string name="key_management_dialog_key_add">添加</string>
 </resources>

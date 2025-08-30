@@ -300,7 +300,7 @@ private fun CryptoStats(
  * 一个用于展示和选择密钥的自定义组件。
  */
 @Composable
-private fun KeySelector(
+fun KeySelector(
     selectedKeyName: String,
     onClick: () -> Unit
 ) {

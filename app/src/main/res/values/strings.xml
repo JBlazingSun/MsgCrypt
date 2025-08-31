@@ -118,5 +118,5 @@
     <!--    密钥管理相关-->
     <string name="key_management_dialog_key_management">密钥管理</string>
     <string name="key_management_dialog_key_add">添加</string>
-    <string name="key_screen_supported_app">支持的应用</string>
+    <string name="key_screen_supported_app">默认支持应用</string>
 </resources>

@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DividerDefaults
@@ -25,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,8 +56,7 @@ import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
 fun KeyScreen(modifier: Modifier = Modifier) {
     // 状态管理
     var currentKey by rememberDataStoreState(CURRENT_KEY, DEFAULT_SECRET_KEY)
-    // 新增一个状态，用来控制密钥管理对话框的显示和隐藏
-    var showKeyDialog by remember { mutableStateOf(false) }
+    var showKeyDialog by remember { mutableStateOf(false) }     //控制密钥管理对话框的显示和隐藏
 
     LazyColumn(
         modifier = modifier
@@ -110,10 +111,11 @@ fun KeyScreen(modifier: Modifier = Modifier) {
 
 @Composable
 fun SupportedAppItem(handler: ChatAppHandler){
-    var isEnabled by rememberDataStoreState(
-        booleanPreferencesKey("app_enabled_${handler.packageName}"),
+    var isEnabled by rememberDataStoreState(booleanPreferencesKey("app_enabled_${handler.packageName}"),
         defaultValue = true
     )
+    var showHandlerInfoDialog by remember { mutableStateOf(false) }    //控制是否展示handler详细信息
+
     val context = LocalContext.current
     var appIcon by remember { mutableStateOf<Drawable?>(null) }
     var isAppInstalled by remember { mutableStateOf(false) }
@@ -129,7 +131,15 @@ fun SupportedAppItem(handler: ChatAppHandler){
         }
     }
 
+    if (showHandlerInfoDialog) {
+        AppHandlerInfoDialog(
+            handler = handler,
+            onDismissRequest = { showHandlerInfoDialog = false }
+        )
+    }
+
     Card(
+        onClick = { showHandlerInfoDialog = true },
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -180,5 +190,51 @@ fun SupportedAppItem(handler: ChatAppHandler){
                 enabled = isAppInstalled
             )
         }
+    }
+}
+
+@Composable
+private fun AppHandlerInfoDialog(
+    handler: ChatAppHandler,
+    onDismissRequest: () -> Unit
+){
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        // 标题
+        title = { Text(text = "${handler.name} - 配置详情") },
+        // 内容
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                InfoRow(label = "输入框 ID:", value = handler.inputId)
+                InfoRow(label = "发送按钮 ID:", value = handler.sendBtnId)
+                InfoRow(label = "消息气泡 ID:", value = handler.messageTextId)
+                InfoRow(label = "消息列表类名:", value = handler.messageListClassName)
+            }
+        },
+        // 确认按钮
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+/**
+ * ✨ 新增：用于在对话框中显示一行信息的辅助 Composable
+ */
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Column {
+        Text(
+            text = label,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }

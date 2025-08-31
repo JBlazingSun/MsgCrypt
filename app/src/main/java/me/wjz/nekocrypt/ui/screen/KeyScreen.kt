@@ -2,6 +2,7 @@ package me.wjz.nekocrypt.ui.screen
 
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,16 +10,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -40,10 +42,12 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import me.wjz.nekocrypt.AppRegistry
 import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
+import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
 import me.wjz.nekocrypt.hook.rememberDataStoreState
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
+import me.wjz.nekocrypt.ui.SettingsHeader
 import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
 
 @Composable
@@ -57,7 +61,7 @@ fun KeyScreen(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // 1. 密钥选择器
         item {
@@ -69,12 +73,33 @@ fun KeyScreen(modifier: Modifier = Modifier) {
                 }
             )
         }
-        item { Spacer(modifier = Modifier.height(24.dp)) }
 
-        items(AppRegistry.allHandlers) { handler ->
-            // 将 handler 实例传递给我们的列表项 Composable
-            SupportedAppItem(handler = handler)
-            Spacer(modifier = Modifier.height(12.dp))
+        // 支持的应用
+        item {
+            SettingsHeader(stringResource(R.string.key_screen_supported_app))
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
+        }
+
+        item{
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                // 在 Card 内部使用 Column 来垂直排列我们的 App 列表项
+                Column(
+                    modifier = Modifier.padding(vertical = 16.dp, horizontal = 12.dp), // 给上下一点内边距
+                    verticalArrangement = Arrangement.spacedBy(12.dp) // 垂直项间距
+                ) {
+                    AppRegistry.allHandlers.forEach { handler ->
+                        SupportedAppItem(handler = handler)
+                    }
+                }
+            }
         }
     }
 
@@ -92,7 +117,6 @@ fun SupportedAppItem(handler: ChatAppHandler){
     val context = LocalContext.current
     var appIcon by remember { mutableStateOf<Drawable?>(null) }
     var isAppInstalled by remember { mutableStateOf(false) }
-
     // 尝试获取应用图标
     LaunchedEffect(handler.packageName) {
         try{
@@ -101,12 +125,15 @@ fun SupportedAppItem(handler: ChatAppHandler){
         }catch (e: PackageManager.NameNotFoundException) {
             appIcon = null
             isAppInstalled = false
+            Log.e(NekoCryptApp.TAG, e.toString())
         }
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(16.dp),
     ) {
         Row(
             modifier = Modifier
@@ -133,7 +160,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
             // 然后放APP名和包名
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    handler.name + if (!isAppInstalled) " —— ${stringResource(R.string.not_installed)}" else "",
+                    handler.name + if (!isAppInstalled) " — ${stringResource(R.string.not_installed)}" else "",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

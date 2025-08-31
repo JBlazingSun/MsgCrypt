@@ -3,6 +3,7 @@ package me.wjz.nekocrypt
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.util.Log
 import me.wjz.nekocrypt.data.DataStoreManager
 
 class NekoCryptApp : Application() {
@@ -16,6 +17,7 @@ class NekoCryptApp : Application() {
         super.onCreate()
         createNotificationChannel() // 创建通知渠道，用于在 Android 8.0 及以上版本上显示通知
         instance = this
+        Log.d(TAG, "NekoCryptApp onCreate")
     }
 
 

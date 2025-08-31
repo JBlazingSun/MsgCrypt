@@ -75,7 +75,8 @@ fun SettingsHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
     )

@@ -205,10 +205,10 @@ private fun AppHandlerInfoDialog(
         // 内容
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                InfoRow(label = "输入框 ID:", value = handler.inputId)
-                InfoRow(label = "发送按钮 ID:", value = handler.sendBtnId)
-                InfoRow(label = "消息气泡 ID:", value = handler.messageTextId)
-                InfoRow(label = "消息列表类名:", value = handler.messageListClassName)
+                InfoRow(label = stringResource(R.string.key_screen_supported_app_input_id), value = handler.inputId)
+                InfoRow(label = stringResource(R.string.key_screen_supported_app_send_btn_id), value = handler.sendBtnId)
+                InfoRow(label = stringResource(R.string.key_screen_supported_app_message_text_id), value = handler.messageTextId)
+                InfoRow(label = stringResource(R.string.key_screen_supported_app_message_list_class_name), value = handler.messageListClassName)
             }
         },
         // 确认按钮

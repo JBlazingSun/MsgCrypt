@@ -30,7 +30,7 @@ interface ChatAppHandler {
     val sendBtnId: String
 
     /**
-     * QQ气泡消息的ID
+     * 气泡消息的ID
      */
     val messageTextId: String
 

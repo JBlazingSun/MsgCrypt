@@ -3,6 +3,7 @@ package me.wjz.nekocrypt.ui.screen
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -23,7 +26,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,8 +40,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -221,20 +229,59 @@ private fun AppHandlerInfoDialog(
 }
 
 /**
- * ✨ 新增：用于在对话框中显示一行信息的辅助 Composable
+ * ✨ “魔法大改造”后的 InfoRow！
  */
 @Composable
 private fun InfoRow(label: String, value: String) {
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
     Column {
+        // 标签
         Text(
             text = label,
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Spacer(modifier = Modifier.height(4.dp))
+        // 内容和复制按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 用 Surface 包裹，创造代码块效果
+            Surface(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp, // 增加一点色调深度
+            ) {
+                Text(
+                    text = value.ifEmpty { "N/A" }, // 如果值为空，显示 N/A
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = FontFamily.Monospace, // ✨ 使用等宽字体！
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            // 复制按钮
+            IconButton(
+                onClick = {
+                    clipboardManager.setText(AnnotatedString(value))
+                    // 显示一个短暂的提示
+                    Toast.makeText(context, "已复制!", Toast.LENGTH_SHORT).show()
+                },
+                enabled = value.isNotEmpty() // 如果值为空，禁用按钮
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ContentCopy,
+                    contentDescription = "复制 $label",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
     }
 }

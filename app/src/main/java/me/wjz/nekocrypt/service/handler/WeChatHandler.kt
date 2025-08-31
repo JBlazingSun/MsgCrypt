@@ -7,10 +7,13 @@ class WeChatHandler : BaseChatAppHandler() {
         const val ID_MESSAGE_TEXT="com.tencent.mm:id/bkl"
         const val PACKAGE_NAME ="com.tencent.mm"
         const val CLASS_NAME_RECYCLER_VIEW = "com.tencent.mm:id/bp0"
+        const val APP_NAME ="微信"
     }
 
     override val packageName: String
         get() = PACKAGE_NAME
+    override val name: String
+        get() = APP_NAME
 
     override val inputId: String
         get() = ID_INPUT

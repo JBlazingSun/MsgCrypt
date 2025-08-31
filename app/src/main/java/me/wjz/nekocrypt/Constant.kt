@@ -4,6 +4,9 @@ import androidx.annotation.StringRes
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import me.wjz.nekocrypt.service.handler.ChatAppHandler
+import me.wjz.nekocrypt.service.handler.QQHandler
+import me.wjz.nekocrypt.service.handler.WeChatHandler
 
 object Constant {
     const val APP_NAME = "NekoCrypt"
@@ -40,6 +43,20 @@ object CommonKeys {
     const val ENCRYPTION_MODE_IMMERSIVE = "immersive"
     const val DECRYPTION_MODE_STANDARD = "standard"
     const val DECRYPTION_MODE_IMMERSIVE = "immersive"
+}
+
+object AppRegistry {
+    /**
+     * 包含所有受支持应用处理器实例的权威列表。
+     * 未来要支持新的App，只需要在这里新增一行即可！
+     * UI 和 Service 都会从这里读取信息。
+     */
+    val allHandlers: List<ChatAppHandler> = listOf(
+        QQHandler(),
+        WeChatHandler()
+        //  TelegramHandler(),
+        //  ... 以后在这里添加更多
+    )
 }
 
 enum class CryptoMode(val key: String, @StringRes val labelResId: Int){

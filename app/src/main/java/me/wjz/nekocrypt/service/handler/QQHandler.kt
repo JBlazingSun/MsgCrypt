@@ -10,10 +10,12 @@ class QQHandler : BaseChatAppHandler() {
         // 某些版本ID_MESSAGE_TEXT是SQB
         const val ID_MESSAGE_TEXT="com.tencent.mobileqq:id/sbl"
         const val PACKAGE_NAME ="com.tencent.mobileqq"
+        const val APP_NAME ="QQ"
         const val CLASS_NAME_RECYCLER_VIEW="RecyclerView"
     }
 
     override val packageName: String get() = PACKAGE_NAME
+    override val name : String get() = APP_NAME
     override val inputId: String get() = ID_INPUT
 
     override val sendBtnId: String get() = ID_SEND_BTN

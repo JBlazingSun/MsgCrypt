@@ -109,7 +109,9 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
     }
 
     Dialog(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = {
+            onDismissRequest()
+        },
         // ✨ 2. [核心修正] 告诉Dialog不要使用平台默认的窄宽度
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
@@ -170,7 +172,7 @@ fun KeyManagementDialog(onDismissRequest: () -> Unit) {
                     horizontalArrangement = Arrangement.End
                 ) {
                     Button(onClick = onDismissRequest) {
-                        Text(stringResource(R.string.finish))
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             }

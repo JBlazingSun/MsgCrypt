@@ -241,6 +241,7 @@ private fun InfoRow(label: String, value: String) {
         Text(
             text = label,
             fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -255,15 +256,13 @@ private fun InfoRow(label: String, value: String) {
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(8.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp, // 增加一点色调深度
+                tonalElevation = 4.dp, // 增加一点色调深度
             ) {
                 Text(
                     text = value.ifEmpty { "N/A" }, // 如果值为空，显示 N/A
                     style = MaterialTheme.typography.bodyMedium,
                     fontFamily = FontFamily.Monospace, // ✨ 使用等宽字体！
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))

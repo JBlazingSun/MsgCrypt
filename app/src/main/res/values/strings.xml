@@ -18,6 +18,7 @@
     <string name="image_saved_to_gallery_success">成功保存到相册</string>
     <string name="image_saved_to_gallery_failed">保存到相册失败</string>
     <string name="image_saved_to_gallery_saved">已保存到相册</string>
+    <string name="has_copy">已复制到剪切板</string>
 
     <!--    bottomBar的label-->
     <string name="home">主页</string>

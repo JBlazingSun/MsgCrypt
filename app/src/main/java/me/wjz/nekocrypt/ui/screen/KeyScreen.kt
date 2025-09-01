@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -26,7 +25,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -235,7 +233,7 @@ private fun AppHandlerInfoDialog(
 private fun InfoRow(label: String, value: String) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
-
+    val hasCopyHint = stringResource(R.string.has_copy)
     Column {
         // 标签
         Text(
@@ -253,6 +251,13 @@ private fun InfoRow(label: String, value: String) {
         ) {
             // 用 Surface 包裹，创造代码块效果
             Surface(
+                onClick = {
+                    if(value.isNotEmpty()){
+                        clipboardManager.setText(AnnotatedString(value))
+                        // 显示一个短暂的提示
+                        Toast.makeText(context, hasCopyHint, Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(8.dp),
                 color = MaterialTheme.colorScheme.surface,
@@ -266,21 +271,6 @@ private fun InfoRow(label: String, value: String) {
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            // 复制按钮
-            IconButton(
-                onClick = {
-                    clipboardManager.setText(AnnotatedString(value))
-                    // 显示一个短暂的提示
-                    Toast.makeText(context, "已复制!", Toast.LENGTH_SHORT).show()
-                },
-                enabled = value.isNotEmpty() // 如果值为空，禁用按钮
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ContentCopy,
-                    contentDescription = "复制 $label",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
         }
     }
 }

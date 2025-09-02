@@ -210,7 +210,7 @@ private fun AppHandlerInfoDialog(
         title = { Text(text = "${handler.name} - 配置详情") },
         // 内容
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 InfoRow(label = stringResource(R.string.key_screen_supported_app_input_id), value = handler.inputId)
                 InfoRow(label = stringResource(R.string.key_screen_supported_app_send_btn_id), value = handler.sendBtnId)
                 InfoRow(label = stringResource(R.string.key_screen_supported_app_message_text_id), value = handler.messageTextId)
@@ -238,10 +238,11 @@ private fun InfoRow(label: String, value: String) {
         // 标签
         Text(
             text = label,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 16.sp,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 12.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
         // 内容和复制按钮

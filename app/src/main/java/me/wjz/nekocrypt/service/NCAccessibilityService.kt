@@ -8,14 +8,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import me.wjz.nekocrypt.AppRegistry
 import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.CryptoMode
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.observeAsState
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
-import me.wjz.nekocrypt.service.handler.QQHandler
-import me.wjz.nekocrypt.service.handler.WeChatHandler
 import me.wjz.nekocrypt.util.isSystemApp
 
 class NCAccessibilityService : AccessibilityService() {
@@ -92,10 +91,10 @@ class NCAccessibilityService : AccessibilityService() {
     // —————————————————————————— override ——————————————————————————
 
     // handler工厂方法
-    private val handlerFactory: Map<String, () -> ChatAppHandler> = mapOf(
-        QQHandler.PACKAGE_NAME to { QQHandler() },
-        WeChatHandler.PACKAGE_NAME to { WeChatHandler()}
-    )
+    private val handlerFactory = AppRegistry.allHandlers.associate { handler ->
+        handler.packageName to {handler}
+    }
+
     private var currentHandler: ChatAppHandler? = null
 
     override fun onServiceConnected() {

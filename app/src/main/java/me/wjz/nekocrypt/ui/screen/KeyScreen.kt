@@ -193,7 +193,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
                 checked = isEnabled,
                 onCheckedChange = {
                     isEnabled = it
-                    Log.d(NekoCryptApp.TAG, "包${handler.packageName}监听状态：$it")
+                    //Log.d(NekoCryptApp.TAG, "包${handler.packageName}监听状态：$it")
                 },
                 // ✨ 如果App没安装，开关就禁用
                 enabled = isAppInstalled

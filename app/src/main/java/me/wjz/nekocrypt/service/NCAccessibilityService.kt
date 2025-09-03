@@ -107,7 +107,7 @@ class NCAccessibilityService : AccessibilityService() {
         // startPeriodicScreenScan()// 做debug扫描
         // 🎯 关键：启动保活服务
         startKeepAliveService()
-        observeAppSettings()    // 监听APP的开关，在keyScreen中可以设置开关
+        observeAppSettings()
     }
 
     // ✨ 新增：重写 onDestroy 方法，这是服务生命周期结束时最后的清理机会
@@ -137,7 +137,7 @@ class NCAccessibilityService : AccessibilityService() {
         val eventPackage = event.packageName?.toString() ?: "unknown" // 事件来自的包名
 
         // 情况一：事件来自我们支持的应用，并且打开了这个应用的对应开关
-        if (handlerFactory.containsKey(eventPackage) && enabledAppsCache[eventPackage] ?:false) {
+        if (handlerFactory.containsKey(eventPackage) && enabledAppsCache[eventPackage] == true) {
             // 如果当前没有处理器，或者处理器不是对应这个App的，就进行切换
             if (currentHandler?.packageName != eventPackage) {
                 currentHandler?.onHandlerDeactivated()

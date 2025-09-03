@@ -191,7 +191,10 @@ fun SupportedAppItem(handler: ChatAppHandler){
             // 右边放开关
             Switch(
                 checked = isEnabled,
-                onCheckedChange = { isEnabled = it },
+                onCheckedChange = {
+                    isEnabled = it
+                    Log.d(NekoCryptApp.TAG, "包${handler.packageName}监听状态：$it")
+                },
                 // ✨ 如果App没安装，开关就禁用
                 enabled = isAppInstalled
             )
@@ -268,7 +271,9 @@ private fun InfoRow(label: String, value: String) {
                     text = value.ifEmpty { "N/A" }, // 如果值为空，显示 N/A
                     style = MaterialTheme.typography.bodyMedium,
                     fontFamily = FontFamily.Monospace, // ✨ 使用等宽字体！
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))

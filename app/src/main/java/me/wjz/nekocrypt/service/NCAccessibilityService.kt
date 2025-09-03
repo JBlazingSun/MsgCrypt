@@ -4,10 +4,12 @@ import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import me.wjz.nekocrypt.AppRegistry
 import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.CryptoMode
@@ -94,6 +96,8 @@ class NCAccessibilityService : AccessibilityService() {
     private val handlerFactory = AppRegistry.allHandlers.associate { handler ->
         handler.packageName to {handler}
     }
+    // 判断handler是否active
+    private val enabledAppsCache = mutableMapOf<String, Boolean>()
 
     private var currentHandler: ChatAppHandler? = null
 
@@ -103,6 +107,7 @@ class NCAccessibilityService : AccessibilityService() {
         // startPeriodicScreenScan()// 做debug扫描
         // 🎯 关键：启动保活服务
         startKeepAliveService()
+        observeAppSettings()    // 监听APP的开关，在keyScreen中可以设置开关
     }
 
     // ✨ 新增：重写 onDestroy 方法，这是服务生命周期结束时最后的清理机会
@@ -131,8 +136,8 @@ class NCAccessibilityService : AccessibilityService() {
 
         val eventPackage = event.packageName?.toString() ?: "unknown" // 事件来自的包名
 
-        // 情况一：事件来自我们支持的应用
-        if (handlerFactory.containsKey(eventPackage)) {
+        // 情况一：事件来自我们支持的应用，并且打开了这个应用的对应开关
+        if (handlerFactory.containsKey(eventPackage) && enabledAppsCache[eventPackage] ?:false) {
             // 如果当前没有处理器，或者处理器不是对应这个App的，就进行切换
             if (currentHandler?.packageName != eventPackage) {
                 currentHandler?.onHandlerDeactivated()
@@ -293,5 +298,33 @@ class NCAccessibilityService : AccessibilityService() {
         Log.d(tag, "$indent[属性] -> [可点击:${node.isClickable}, 可滚动:${node.isScrollable}, 可编辑:${node.isEditable}]")
     }
 
+    // 【新增】一个全新的方法，专门负责在后台订阅和更新所有App的开关状态
+    /**
+     * 监听所有在 AppRegistry 中注册的应用的启用状态。
+     * 它会为每个应用启动一个协程，持续从 DataStore 订阅其开关状态，
+     * 并将最新状态更新到内存缓存 `enabledAppsCache` 中。
+     */
+    private fun observeAppSettings() {
+        if (handlerFactory.keys.isEmpty()) {
+            Log.w(tag, "handlerFactory 是空的，无法监听应用设置。")
+            return
+        }
+
+        Log.d(tag, "开始监听这些App的开关状态: ${handlerFactory.keys}")
+
+        // 遍历所有支持的应用
+        handlerFactory.keys.forEach { packageName ->
+            // 为每个应用启动一个独立的协程来监听其设置
+            serviceScope.launch {
+                val key = booleanPreferencesKey("app_enabled_${packageName}")
+                dataStoreManager.getSettingFlow(key, true) // 默认值为true，与UI保持一致
+                    .collect { isEnabled ->
+                        // 当从DataStore获取到新值时，更新我们的内存缓存
+                        enabledAppsCache[packageName] = isEnabled
+                        Log.d(tag, "应用开关状态更新 -> $packageName: $isEnabled")
+                    }
+            }
+        }
+    }
 }
 

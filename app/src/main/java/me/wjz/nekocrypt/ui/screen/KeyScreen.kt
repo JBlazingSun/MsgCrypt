@@ -108,6 +108,15 @@ fun KeyScreen(modifier: Modifier = Modifier) {
                 }
             }
         }
+        // 自定义应用
+        item {
+            SettingsHeader(stringResource(R.string.key_screen_custom_app))
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
+        }
     }
 
     if(showKeyDialog){

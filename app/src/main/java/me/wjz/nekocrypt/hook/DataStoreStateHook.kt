@@ -1,6 +1,5 @@
 package me.wjz.nekocrypt.hook
 
-import android.databinding.tool.writer.Scope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember

@@ -36,6 +36,7 @@ object SettingKeys {
     val SEND_BTN_OVERLAY_COLOR = stringPreferencesKey("send_btn_overlay_color")
     // 控制弹出发送图片or文件视图的双击最大间隔时间
     val SHOW_ATTACHMENT_VIEW_DOUBLE_CLICK_THRESHOLD = longPreferencesKey("show_attachment_view_double_click_threshold")
+    val CUSTOM_APPS = stringPreferencesKey("custom_apps")
 }
 
 object CommonKeys {

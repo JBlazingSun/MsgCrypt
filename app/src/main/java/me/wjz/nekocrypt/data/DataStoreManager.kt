@@ -17,6 +17,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.SettingKeys
+import me.wjz.nekocrypt.service.handler.CustomAppHandler
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -91,4 +92,43 @@ class DataStoreManager(private val context: Context) {
             }
         }
     }
+
+    /**
+     * ✨ 新增：保存自定义应用列表。
+     * 它接收一个 CustomAppHandler 列表，将其序列化为JSON字符串，然后存入DataStore。
+     */
+    suspend fun saveCustomApps(apps: Array<CustomAppHandler>) {
+        val jsonString = Json.encodeToString(apps)
+        saveSetting(SettingKeys.CUSTOM_APPS, jsonString)
+    }
+
+    /**
+     * ✨ 新增：获取自定义应用列表的 Flow。
+     * 它从 DataStore 读取JSON字符串，并将其反序列化为 CustomAppHandler 列表。
+     * 如果解析失败或没有数据，返回一个空列表。
+     */
+    fun getCustomAppsFlow(): Flow<List<CustomAppHandler>> {
+        // "[]" 是一个空的JSON数组，作为安全的默认值
+        return getSettingFlow(SettingKeys.CUSTOM_APPS, "[]").map { jsonString ->
+            try {
+                Json.decodeFromString<List<CustomAppHandler>>(jsonString)
+            } catch (e: Exception) {
+                Log.e("NekoCrypt", "解析自定义应用列表失败!", e)
+                emptyList() // 解析失败时返回空列表
+            }
+        }
+    }
+
+    /**
+     * ✨ [新增] 一个专门用于在Compose上下文中，以State的形式订阅customApp变化的Hook。
+     *
+     * @param initialValue 当Flow还在加载时的初始默认值。
+     * @return 一个 State<Array<String>> 对象，它的 .value 会随着DataStore的变化而自动更新。
+     */
+    @Composable
+    fun rememberCustomAppState(initialValue: List<CustomAppHandler> = emptyList()): State<List<CustomAppHandler>> {
+        val dataStoreManager = LocalDataStoreManager.current
+        return dataStoreManager.getCustomAppsFlow().collectAsState(initial = initialValue)
+    }
+
 }

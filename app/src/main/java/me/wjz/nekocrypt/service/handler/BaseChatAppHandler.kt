@@ -33,7 +33,7 @@ import kotlinx.coroutines.withContext
 import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.CryptoMode
 import me.wjz.nekocrypt.R
-import me.wjz.nekocrypt.service.NCAccessibilityService
+import com.dianming.phoneapp.MyAccessibilityService
 import me.wjz.nekocrypt.ui.component.DecryptionPopup
 import me.wjz.nekocrypt.ui.dialog.AttachmentPreviewState
 import me.wjz.nekocrypt.ui.dialog.AttachmentState
@@ -68,7 +68,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     abstract override val messageListClassName: String
 
     // 处理器内部状态
-    private var service: NCAccessibilityService? = null
+    private var service: MyAccessibilityService? = null
 
     // 按钮遮罩的管理器
     private var overlayWindowManager: WindowManager? = null
@@ -102,7 +102,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     private var attachmentState by mutableStateOf(AttachmentState())
 
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent, service: NCAccessibilityService) {
+    override fun onAccessibilityEvent(event: AccessibilityEvent, service: MyAccessibilityService) {
         // 悬浮窗管理逻辑
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             if (service.useAutoEncryption) {
@@ -151,7 +151,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     }
 
     // 启动服务
-    override fun onHandlerActivated(service: NCAccessibilityService) {
+    override fun onHandlerActivated(service: MyAccessibilityService) {
         this.service = service
         this.overlayWindowManager =
             service.getSystemService(Context.WINDOW_SERVICE) as WindowManager

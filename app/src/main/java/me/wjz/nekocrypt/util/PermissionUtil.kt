@@ -3,7 +3,7 @@ package me.wjz.nekocrypt.util
 import android.content.Context
 import android.provider.Settings
 import android.text.TextUtils
-import me.wjz.nekocrypt.service.NCAccessibilityService
+import com.dianming.phoneapp.MyAccessibilityService
 
 object PermissionUtil {
     /**
@@ -17,7 +17,7 @@ object PermissionUtil {
      * 检查我们的无障碍服务是否已启用。
      */
     fun isAccessibilityServiceEnabled(context: Context): Boolean {
-        val serviceName = context.packageName + "/" + NCAccessibilityService::class.java.name
+        val serviceName = context.packageName + "/" + MyAccessibilityService::class.java.name
         try {
             val enabledServices = Settings.Secure.getString(
                 context.contentResolver,

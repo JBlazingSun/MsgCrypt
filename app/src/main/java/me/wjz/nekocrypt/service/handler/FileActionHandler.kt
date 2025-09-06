@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.wjz.nekocrypt.R
-import me.wjz.nekocrypt.service.NCAccessibilityService
+import com.dianming.phoneapp.MyAccessibilityService
 import me.wjz.nekocrypt.ui.dialog.FilePreviewDialog
 import me.wjz.nekocrypt.util.CryptoDownloader
 import me.wjz.nekocrypt.util.NCFileProtocol
@@ -28,7 +28,7 @@ import java.io.IOException
 /**
  * 点击文件or图片按钮后的处理类，负责控制悬浮窗的生命周期，并负责下载，展示等逻辑
  */
-class FileActionHandler(private val service: NCAccessibilityService) {
+class FileActionHandler(private val service: MyAccessibilityService) {
     private val tag ="NCFileActionHandler"
     private var dialogManager: NCWindowManager? = null
     private var downloadProgress by mutableStateOf<Int?>(null)

@@ -1,4 +1,4 @@
-package me.wjz.nekocrypt.service
+package com.dianming.phoneapp   // what the fuck?
 
 import android.accessibilityservice.AccessibilityService
 import android.util.Log
@@ -16,10 +16,11 @@ import me.wjz.nekocrypt.CryptoMode
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.observeAsState
+import me.wjz.nekocrypt.service.KeepAliveService
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
 import me.wjz.nekocrypt.util.isSystemApp
 
-class NCAccessibilityService : AccessibilityService() {
+class MyAccessibilityService : AccessibilityService() {
     val tag = "NekoAccessibility"
 
     // 1. 创建一个 Service 自己的协程作用域，它的生命周期和 Service 绑定
@@ -180,7 +181,7 @@ class NCAccessibilityService : AccessibilityService() {
     private fun startKeepAliveService() {
         if (!isKeepAliveServiceStarted) {
             try {
-                KeepAliveService.start(this)
+                KeepAliveService.Companion.start(this)
                 isKeepAliveServiceStarted = true
                 Log.d(tag, "✅ 保活服务已启动")
             } catch (e: Exception) {
@@ -195,7 +196,7 @@ class NCAccessibilityService : AccessibilityService() {
     private fun stopKeepAliveService() {
         if (isKeepAliveServiceStarted) {
             try {
-                KeepAliveService.stop(this)
+                KeepAliveService.Companion.stop(this)
                 isKeepAliveServiceStarted = false
                 Log.d(tag, "🛑 保活服务已停止")
             } catch (e: Exception) {
@@ -327,4 +328,3 @@ class NCAccessibilityService : AccessibilityService() {
         }
     }
 }
-

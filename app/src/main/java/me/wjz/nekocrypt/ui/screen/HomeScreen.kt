@@ -34,7 +34,7 @@ import me.wjz.nekocrypt.CommonKeys.ENCRYPTION_MODE_STANDARD
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.rememberDataStoreState
-import me.wjz.nekocrypt.service.NCAccessibilityService
+import com.dianming.phoneapp.MyAccessibilityService
 import me.wjz.nekocrypt.ui.InfoDialogIcon
 import me.wjz.nekocrypt.ui.RadioOption
 import me.wjz.nekocrypt.ui.SegmentedButtonSetting
@@ -53,7 +53,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     // 2. 使用我们新的 Composable 函数来获取并监听无障碍服务的状态
     val isAccessibilityEnabled by rememberAccessibilityServiceState(
         context,
-        NCAccessibilityService::class.java
+        MyAccessibilityService::class.java
     )
 
     val useAutoEncryption by rememberDataStoreState(SettingKeys.USE_AUTO_ENCRYPTION, false)

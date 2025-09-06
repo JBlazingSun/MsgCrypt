@@ -38,6 +38,20 @@ fun rememberKeyArrayState(initialValue: Array<String> = emptyArray()): State<Arr
     return dataStoreManager.getKeyArrayFlow().collectAsState(initial = initialValue)
 }
 
+
+/**
+ * ✨ [新增] 一个专门用于在Compose上下文中，以State的形式订阅customApp变化的Hook。
+ *
+ * @param initialValue 当Flow还在加载时的初始默认值。
+ * @return 一个 State<Array<String>> 对象，它的 .value 会随着DataStore的变化而自动更新。
+ */
+@Composable
+fun rememberCustomAppState(initialValue: List<CustomAppHandler> = emptyList()): State<List<CustomAppHandler>> {
+    val dataStoreManager = LocalDataStoreManager.current
+    return dataStoreManager.getCustomAppsFlow().collectAsState(initial = initialValue)
+}
+
+
 class DataStoreManager(private val context: Context) {
 
     //通用的读取方法 (使用泛型)
@@ -117,18 +131,6 @@ class DataStoreManager(private val context: Context) {
                 emptyList() // 解析失败时返回空列表
             }
         }
-    }
-
-    /**
-     * ✨ [新增] 一个专门用于在Compose上下文中，以State的形式订阅customApp变化的Hook。
-     *
-     * @param initialValue 当Flow还在加载时的初始默认值。
-     * @return 一个 State<Array<String>> 对象，它的 .value 会随着DataStore的变化而自动更新。
-     */
-    @Composable
-    fun rememberCustomAppState(initialValue: List<CustomAppHandler> = emptyList()): State<List<CustomAppHandler>> {
-        val dataStoreManager = LocalDataStoreManager.current
-        return dataStoreManager.getCustomAppsFlow().collectAsState(initial = initialValue)
     }
 
 }

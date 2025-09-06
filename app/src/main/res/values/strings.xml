@@ -19,6 +19,7 @@
     <string name="image_saved_to_gallery_failed">保存到相册失败</string>
     <string name="image_saved_to_gallery_saved">已保存到相册</string>
     <string name="has_copy">已复制到剪切板</string>
+    <string name="please_grant_overlay_permission">请打开悬浮窗权限</string>
 
     <!--    bottomBar的label-->
     <string name="home">主页</string>
@@ -121,8 +122,11 @@
     <string name="key_management_dialog_key_add">添加</string>
     <string name="key_screen_supported_app">默认支持应用</string>
     <string name="key_screen_custom_app">自定义应用</string>
+    <string name="key_screen_no_custom_app_configured">暂未添加自定义APP</string>
     <string name="key_screen_supported_app_input_id">输入框 ID：</string>
     <string name="key_screen_supported_app_send_btn_id">发送按钮 ID：</string>
     <string name="key_screen_supported_app_message_text_id">消息气泡 ID：</string>
     <string name="key_screen_supported_app_message_list_class_name">消息列表类名：</string>
+    <string name="add_custom_app">添加自定义APP</string>
+
 </resources>

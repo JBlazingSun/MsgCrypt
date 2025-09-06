@@ -1,7 +1,9 @@
 package me.wjz.nekocrypt.ui.screen
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -18,14 +20,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -46,13 +51,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import com.dianming.phoneapp.MyAccessibilityService
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import me.wjz.nekocrypt.AppRegistry
 import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
+import me.wjz.nekocrypt.data.rememberCustomAppState
 import me.wjz.nekocrypt.hook.rememberDataStoreState
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
 import me.wjz.nekocrypt.ui.SettingsHeader
@@ -63,6 +71,9 @@ fun KeyScreen(modifier: Modifier = Modifier) {
     // 状态管理
     var currentKey by rememberDataStoreState(CURRENT_KEY, DEFAULT_SECRET_KEY)
     var showKeyDialog by remember { mutableStateOf(false) }     //控制密钥管理对话框的显示和隐藏
+    // 自定义APP列表
+    val customApps by rememberCustomAppState()
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = modifier
@@ -116,6 +127,65 @@ fun KeyScreen(modifier: Modifier = Modifier) {
                 thickness = DividerDefaults.Thickness,
                 color = DividerDefaults.color
             )
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(vertical = 16.dp, horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 根据列表是否为空，显示不同的内容
+                    if (customApps.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.key_screen_no_custom_app_configured),
+                            // 为了让单行文本在卡片内居中，我们给它一个 Modifier
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp) // 给一点垂直padding，避免太贴近按钮
+                                .align(Alignment.CenterHorizontally),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        // 遍历自定义应用列表，显示每一项
+                        customApps.forEach { customHandler ->
+                            SupportedAppItem(handler = customHandler)
+                        }
+                    }
+
+                    // 这里的按钮将负责检查权限并启动扫描悬浮窗
+                    OutlinedButton(
+                        onClick = {
+                            // 1. 检查悬浮窗权限
+                            if (!Settings.canDrawOverlays(context)) {
+                                // 权限未授予，提示用户并跳转到设置页面
+                                Toast.makeText(context, context.getString(R.string.please_grant_overlay_permission), Toast.LENGTH_SHORT).show()
+                                val intent = Intent(
+                                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                    "package:${context.packageName}".toUri()
+                                )
+                                context.startActivity(intent)
+                            } else {
+                                // 2. 权限已授予，向我们的主服务发送“显示扫描器”的指令
+                                val intent = Intent(context, MyAccessibilityService::class.java).apply {
+                                    action = MyAccessibilityService.ACTION_SHOW_SCANNER
+                                }
+                                context.startService(intent)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_custom_app))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text(stringResource(R.string.add_custom_app))
+                    }
+                }
+            }
         }
     }
 
@@ -214,7 +284,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
 @Composable
 private fun AppHandlerInfoDialog(
     handler: ChatAppHandler,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ){
     AlertDialog(
         onDismissRequest = onDismissRequest,

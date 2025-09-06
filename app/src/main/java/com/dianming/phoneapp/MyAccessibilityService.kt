@@ -1,6 +1,7 @@
 package com.dianming.phoneapp   // what the fuck?
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -21,6 +22,12 @@ import me.wjz.nekocrypt.service.handler.ChatAppHandler
 import me.wjz.nekocrypt.util.isSystemApp
 
 class MyAccessibilityService : AccessibilityService() {
+    companion object {
+        //  这里设置service的信号。
+        const val ACTION_SHOW_SCANNER = "me.wjz.nekocrypt.service.ACTION_SHOW_SCANNER"
+        const val ACTION_HIDE_SCANNER = "me.wjz.nekocrypt.service.ACTION_HIDE_SCANNER"
+    }
+
     val tag = "NekoAccessibility"
 
     // 1. 创建一个 Service 自己的协程作用域，它的生命周期和 Service 绑定
@@ -101,6 +108,19 @@ class MyAccessibilityService : AccessibilityService() {
     private val enabledAppsCache = mutableMapOf<String, Boolean>()
 
     private var currentHandler: ChatAppHandler? = null
+
+    // 收指令的方法，其他地方可以用Intent指定action，这里收到就根据action做操作
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when(intent?.action){
+            ACTION_SHOW_SCANNER ->{
+
+            }
+            ACTION_HIDE_SCANNER ->{
+
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()

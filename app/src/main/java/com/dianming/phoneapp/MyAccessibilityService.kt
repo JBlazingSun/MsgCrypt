@@ -17,9 +17,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import kotlinx.coroutines.CoroutineScope
@@ -287,7 +289,7 @@ class MyAccessibilityService : AccessibilityService() {
         ){
             // 这里是悬浮窗的 Compose UI
             Box(
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(64.dp),
                 contentAlignment = Alignment.Center
             ) {
                 NekoCryptTheme(darkTheme = false) {
@@ -298,11 +300,13 @@ class MyAccessibilityService : AccessibilityService() {
                             }
                         },
                         shape = CircleShape,
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier.size(64.dp).alpha(0.9f),
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                     ) {
                         Icon(
+                            modifier = Modifier.size(32.dp),
                             imageVector = Icons.Default.Pets,
-                            contentDescription = "Neko Scanner Button"
+                            contentDescription = "Neko Scanner Button",
                         )
                     }
                 }

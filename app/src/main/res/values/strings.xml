@@ -128,5 +128,7 @@
     <string name="key_screen_supported_app_message_text_id">消息气泡 ID：</string>
     <string name="key_screen_supported_app_message_list_class_name">消息列表类名：</string>
     <string name="add_custom_app">添加自定义APP</string>
+    <string name="enable_scanner_mode">扫描模式</string>
+    <string name="enable_scanner_mode_description">屏幕上会出现用于扫描当前界面的按钮</string>
 
 </resources>

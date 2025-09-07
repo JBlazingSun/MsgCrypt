@@ -128,6 +128,54 @@ fun SwitchSettingItem(
     }
 }
 
+/**
+ * 它不自己管理状态，而是把状态的控制权“提升”给了调用它的地方。
+ *
+ * @param title 主标题文字。
+ * @param subtitle 副标题（描述性文字）。
+ * @param isChecked 开关的当前状态，由外部传入。
+ * @param onCheckedChange 当开关状态被用户改变时调用的回调函数。
+ * @param icon 左侧显示的图标 (可选)。
+ */
+@Composable
+fun SwitchSettingItem(
+    title: String,
+    subtitle: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    icon: (@Composable () -> Unit)? = null
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!isChecked) } // 点击整行也能触发状态改变
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 如果提供了图标，就显示它
+        if (icon != null) {
+            icon()
+            Spacer(modifier = Modifier.width(16.dp))
+        }
+
+        // 用Column来垂直排列主标题和副标题
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = subtitle, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+
+        // 开关的状态和行为完全由外部控制
+        Switch(
+            checked = isChecked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
 @Composable
 fun ClickableSettingItem(
     icon: @Composable () -> Unit,

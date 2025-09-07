@@ -2,7 +2,12 @@ package com.dianming.phoneapp   // what the fuck?
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.graphics.Rect
+import android.os.Build
+import android.util.DisplayMetrics
 import android.util.Log
+import android.view.WindowInsets
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -19,6 +24,7 @@ import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.observeAsState
 import me.wjz.nekocrypt.service.KeepAliveService
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
+import me.wjz.nekocrypt.util.NCWindowManager
 import me.wjz.nekocrypt.util.isSystemApp
 
 class MyAccessibilityService : AccessibilityService() {
@@ -40,6 +46,10 @@ class MyAccessibilityService : AccessibilityService() {
     private val dataStoreManager by lazy {
         (application as NekoCryptApp).dataStoreManager
     }
+
+    // ——————————————————————————扫描悬浮窗相关——————————————————————————
+
+    private var scanBtnWindowManager: NCWindowManager? = null
 
     // ——————————————————————————设置选项——————————————————————————
 
@@ -113,10 +123,12 @@ class MyAccessibilityService : AccessibilityService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when(intent?.action){
             ACTION_SHOW_SCANNER ->{
-
+                showScanner()
+                Log.d(tag,"收到展示")
             }
             ACTION_HIDE_SCANNER ->{
-
+                hideScanner()
+                Log.d(tag,"收到关闭")
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -139,6 +151,9 @@ class MyAccessibilityService : AccessibilityService() {
         serviceScope.cancel()
         // 🎯 关键：停止保活服务
         stopKeepAliveService()
+        // 关掉scanner
+        hideScanner()
+        serviceScope.cancel()
     }
 
     override fun onInterrupt() {
@@ -222,6 +237,58 @@ class MyAccessibilityService : AccessibilityService() {
             } catch (e: Exception) {
                 Log.e(tag, "❌ 停止保活服务失败", e)
             }
+        }
+    }
+
+    /**
+     * 创建并显示扫描悬浮按钮。
+     * 整个悬浮窗的 UI 和行为都在这里定义。
+     */
+    private fun showScanner(){
+        if(scanBtnWindowManager != null) return
+
+        // 先获取设备的屏幕宽高信息，用来初始化悬浮窗位置
+        val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        val screenHeight: Int
+        val screenWidth: Int
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val windowMetrics = windowManager.currentWindowMetrics
+            val insets = windowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+            screenWidth = windowMetrics.bounds.width() - insets.left - insets.right
+            screenHeight = windowMetrics.bounds.height() - insets.top - insets.bottom
+        } else {
+            @Suppress("DEPRECATION")
+            val displayMetrics = DisplayMetrics().also { windowManager.defaultDisplay.getMetrics(it) }
+            screenHeight = displayMetrics.heightPixels
+            screenWidth = displayMetrics.widthPixels
+        }
+
+        // 2. 计算初始位置（右侧居中），并创建一个 Rect 对象
+        val initialX = screenWidth
+        val initialY = screenHeight / 2
+        val initialPositionRect = Rect(initialX, initialY, initialX, initialY)
+
+        scanBtnWindowManager = NCWindowManager(
+            context = this,
+            onDismissRequest = { scanBtnWindowManager = null },
+            anchorRect = initialPositionRect, // 使用 Rect 来传递初始位置
+            isDraggable = true // 开启拖动功能
+        ){
+
+        }
+
+        scanBtnWindowManager?.show()
+        Log.d(tag, "扫描悬浮按钮已显示")
+    }
+
+    /**
+     * 隐藏并销毁扫描悬浮按钮。
+     */
+    private fun hideScanner() {
+        // 在主线程安全地销毁窗口
+        serviceScope.launch(Dispatchers.Main) {
+            scanBtnWindowManager?.dismiss()
         }
     }
 

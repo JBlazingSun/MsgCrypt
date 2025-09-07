@@ -59,12 +59,16 @@ import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
+import me.wjz.nekocrypt.SettingKeys.SCAN_BTN_ACTIVE
+import me.wjz.nekocrypt.data.LocalDataStoreManager
 import me.wjz.nekocrypt.data.rememberCustomAppState
 import me.wjz.nekocrypt.hook.rememberDataStoreState
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
 import me.wjz.nekocrypt.ui.SettingsHeader
 import me.wjz.nekocrypt.ui.SwitchSettingItem
 import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
+import me.wjz.nekocrypt.util.PermissionUtil.isAccessibilityServiceEnabled
+import me.wjz.nekocrypt.util.openAccessibilitySettings
 
 @Composable
 fun KeyScreen(modifier: Modifier = Modifier) {
@@ -74,9 +78,15 @@ fun KeyScreen(modifier: Modifier = Modifier) {
     // 自定义APP列表
     val customApps by rememberCustomAppState()
     val context = LocalContext.current
+    val dataStoreManager = LocalDataStoreManager.current
 
-    // 这个本地状态将作为“状态提升”的数据源，控制着开关的UI
-    var isScannerSwitchOn by remember { mutableStateOf(false) }
+    //  进入UI时做一些判断逻辑
+    LaunchedEffect(Unit) {
+        if (!isAccessibilityServiceEnabled(context) || !Settings.canDrawOverlays(context)) {
+            dataStoreManager.saveSetting(SCAN_BTN_ACTIVE, false)
+            Log.d(NekoCryptApp.TAG, "权限不足，已强制关闭扫描开关。")
+        }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -148,7 +158,8 @@ fun KeyScreen(modifier: Modifier = Modifier) {
                         Text(
                             text = stringResource(R.string.key_screen_no_custom_app_configured),
                             // 为了让单行文本在卡片内居中，我们给它一个 Modifier
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(vertical = 8.dp) // 给一点垂直padding，避免太贴近按钮
                                 .align(Alignment.CenterHorizontally),
                             style = MaterialTheme.typography.bodyLarge,
@@ -166,41 +177,53 @@ fun KeyScreen(modifier: Modifier = Modifier) {
         }
 
         item{
-            // 这里的开关将负责检查权限并启动扫描悬浮窗
             SwitchSettingItem(
+                key = SCAN_BTN_ACTIVE,
+                defaultValue = false,
                 title = stringResource(R.string.enable_scanner_mode),
                 subtitle = stringResource(R.string.enable_scanner_mode_description),
-                isChecked = isScannerSwitchOn, // 开关状态由外部传入
-                onCheckedChange = { isChecked -> // 开关的行为由外部定义
+                icon = { Icon(imageVector = Icons.Default.MyLocation, contentDescription = stringResource(R.string.enable_scanner_mode)) },
+                // ✨ 1. 这里是我们的“门卫”，负责所有权限检查
+                onCheckValidated = { desiredState ->
+                    // 如果是想关闭开关，永远允许
+                    if (!desiredState) return@SwitchSettingItem true
+
+                    // --- 下面都是想打开开关时的检查 ---
+                    // 检查无障碍权限
+                    if (!isAccessibilityServiceEnabled(context)) {
+                        Toast.makeText(context, context.getString(R.string.please_grant_accessibility_service_permission), Toast.LENGTH_LONG).show()
+                        // 最好再加一个跳转，方便用户开启
+                        openAccessibilitySettings(context)
+                        return@SwitchSettingItem false // 验证不通过，拦截！
+                    }
+
                     // 检查悬浮窗权限
-                    if (isChecked && !Settings.canDrawOverlays(context)) {
+                    if (!Settings.canDrawOverlays(context)) {
                         Toast.makeText(context, context.getString(R.string.please_grant_overlay_permission), Toast.LENGTH_LONG).show()
                         val intent = Intent(
                             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                             "package:${context.packageName}".toUri()
                         )
                         context.startActivity(intent)
-                    } else {
-                        // 更新UI状态
-                        isScannerSwitchOn = isChecked
-                        // 根据开关状态，发送不同的指令给服务
-                        val action = if (isChecked) {
-                            MyAccessibilityService.ACTION_SHOW_SCANNER
-                        } else {
-                            MyAccessibilityService.ACTION_HIDE_SCANNER
-                        }
-                        val intent = Intent(context, MyAccessibilityService::class.java).apply {
-                            this.action = action
-                        }
-                        context.startService(intent)
+                        return@SwitchSettingItem false // 验证不通过，拦截！
                     }
+
+                    // 所有检查都通过了，放行！
+                    return@SwitchSettingItem true
                 },
-                // 我们还给它加了个漂亮的图标
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.MyLocation,
-                        contentDescription = stringResource(R.string.enable_scanner_mode)
-                    )
+
+                // ✨ 2. 这里是我们的“执行官”，只在状态成功改变后执行
+                onStateChanged = { isEnabled ->
+                    // 根据最终的状态，发送不同的指令给服务
+                    val action = if (isEnabled) {
+                        MyAccessibilityService.ACTION_SHOW_SCANNER
+                    } else {
+                        MyAccessibilityService.ACTION_HIDE_SCANNER
+                    }
+                    val intent = Intent(context, MyAccessibilityService::class.java).apply {
+                        this.action = action
+                    }
+                    context.startService(intent)
                 }
             )
         }

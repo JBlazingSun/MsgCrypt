@@ -48,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import androidx.datastore.preferences.core.Preferences
+import kotlinx.coroutines.launch
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.hook.rememberDataStoreState
 import kotlin.math.roundToLong
@@ -82,13 +84,19 @@ fun SettingsHeader(title: String) {
     )
 }
 
-
 /**
  * 这是一个自定义的、带开关的设置项组件。
- * 它内部管理着开关自己的状态。
+ * 它内部管理自己的 DataStore 状态，并通过一个验证回调来决定是否要更新状态，
+ * 从而避免了在权限不足时开关“闪烁”的问题。
+ *
+ * @param key 用于在 DataStore 中存取状态的 Key。
+ * @param defaultValue 开关的默认值。
  * @param icon 左侧显示的图标。
  * @param title 主标题文字。
  * @param subtitle 副标题（描述性文字）。
+ * @param onCheckValidated 一个验证回调。当用户尝试改变开关状态时，会先调用它。
+ * 你需要在这个回调里执行权限检查等逻辑，并返回 `true` (允许改变) 或 `false` (阻止改变)。
+ * @param onStateChanged 当状态被成功改变后，会调用这个回调。你可以在这里执行发送指令等副作用操作。
  */
 @Composable
 fun SwitchSettingItem(
@@ -97,15 +105,33 @@ fun SwitchSettingItem(
     icon: @Composable () -> Unit,
     title: String,
     subtitle: String,
-    onClick: () -> Unit = {},
+    onCheckValidated: suspend (Boolean) -> Boolean = { true },
+    onStateChanged: (Boolean) -> Unit = {},
 ) {
+    // 1. 组件自己管理自己的状态，从 DataStore 读取和写入
     var isChecked by rememberDataStoreState(key, defaultValue)
+    val scope = rememberCoroutineScope()
 
-    //用Row来水平排列元素
+    // 2. 定义一个统一的状态变更处理器
+    val changeHandler = { desiredState: Boolean ->
+        scope.launch {
+            // 3. 在改变状态前，先调用外部传入的“验证函数”
+            val canChange = onCheckValidated(desiredState)
+            // 4. 只有“验证函数”返回 true，才真正更新状态
+            if (canChange) {
+                isChecked = desiredState
+                // 5. 状态成功更新后，通知外部
+                onStateChanged(desiredState)
+            }
+            // ✨ 如果 canChange 是 false，这里什么都不做，UI上的开关也就不会动啦！
+        }
+    }
+
+    // 用Row来水平排列元素
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { isChecked = !isChecked }//点击整行也能更新状态
+            .clickable { changeHandler(!isChecked) } // 点击整行也能触发状态变更
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -121,58 +147,7 @@ fun SwitchSettingItem(
                 color = LocalContentColor.current.copy(alpha = 0.6f)
             ) // 让副标题颜色浅一点
         }
-        Switch(checked = isChecked, onCheckedChange = {
-            isChecked = it
-            onClick()
-        })
-    }
-}
-
-/**
- * 它不自己管理状态，而是把状态的控制权“提升”给了调用它的地方。
- *
- * @param title 主标题文字。
- * @param subtitle 副标题（描述性文字）。
- * @param isChecked 开关的当前状态，由外部传入。
- * @param onCheckedChange 当开关状态被用户改变时调用的回调函数。
- * @param icon 左侧显示的图标 (可选)。
- */
-@Composable
-fun SwitchSettingItem(
-    title: String,
-    subtitle: String,
-    isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    icon: (@Composable () -> Unit)? = null
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!isChecked) } // 点击整行也能触发状态改变
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 如果提供了图标，就显示它
-        if (icon != null) {
-            icon()
-            Spacer(modifier = Modifier.width(16.dp))
-        }
-
-        // 用Column来垂直排列主标题和副标题
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = subtitle, style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-        }
-
-        // 开关的状态和行为完全由外部控制
-        Switch(
-            checked = isChecked,
-            onCheckedChange = onCheckedChange
-        )
+        Switch(checked = isChecked, onCheckedChange = { changeHandler(it) })
     }
 }
 

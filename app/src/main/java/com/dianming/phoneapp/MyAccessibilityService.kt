@@ -10,6 +10,17 @@ import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +35,7 @@ import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.observeAsState
 import me.wjz.nekocrypt.service.KeepAliveService
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
+import me.wjz.nekocrypt.ui.theme.NekoCryptTheme
 import me.wjz.nekocrypt.util.NCWindowManager
 import me.wjz.nekocrypt.util.isSystemApp
 
@@ -124,11 +136,9 @@ class MyAccessibilityService : AccessibilityService() {
         when(intent?.action){
             ACTION_SHOW_SCANNER ->{
                 showScanner()
-                Log.d(tag,"收到展示")
             }
             ACTION_HIDE_SCANNER ->{
                 hideScanner()
-                Log.d(tag,"收到关闭")
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -275,7 +285,28 @@ class MyAccessibilityService : AccessibilityService() {
             anchorRect = initialPositionRect, // 使用 Rect 来传递初始位置
             isDraggable = true // 开启拖动功能
         ){
-
+            // 这里是悬浮窗的 Compose UI
+            Box(
+                modifier = Modifier.size(72.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                NekoCryptTheme(darkTheme = false) {
+                    FloatingActionButton(
+                        onClick = {
+                            serviceScope.launch {
+                                Toast.makeText(this@MyAccessibilityService, "喵！扫描按钮被点击！", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        shape = CircleShape,
+                        modifier = Modifier.size(64.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Pets,
+                            contentDescription = "Neko Scanner Button"
+                        )
+                    }
+                }
+            }
         }
 
         scanBtnWindowManager?.show()

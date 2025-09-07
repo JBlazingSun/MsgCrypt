@@ -24,6 +24,7 @@ object SettingKeys {
     val ALL_THE_KEYS = stringPreferencesKey("all_the_keys")
     val USE_AUTO_ENCRYPTION = booleanPreferencesKey("use_auto_encryption")
     val USE_AUTO_DECRYPTION = booleanPreferencesKey("use_auto_decryption")
+    val SCAN_BTN_ACTIVE = booleanPreferencesKey("scan_btn_active")
     val ENCRYPTION_MODE = stringPreferencesKey("encryption_mode")
     val DECRYPTION_MODE = stringPreferencesKey("decryption_mode")
     // 标准加密模式下，长按时间设置

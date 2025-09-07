@@ -131,5 +131,7 @@
     <string name="add_custom_app">添加自定义APP</string>
     <string name="enable_scanner_mode">扫描模式</string>
     <string name="enable_scanner_mode_description">屏幕上会出现用于扫描当前界面的按钮</string>
+    <!--    扫描界面相关-->
+    <string name="scanner_dialog_title">扫描结果</string>
 
 </resources>

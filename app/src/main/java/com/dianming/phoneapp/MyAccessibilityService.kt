@@ -10,7 +10,6 @@ import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -37,6 +36,7 @@ import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.observeAsState
 import me.wjz.nekocrypt.service.KeepAliveService
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
+import me.wjz.nekocrypt.ui.activity.ScannerDialogActivity
 import me.wjz.nekocrypt.ui.theme.NekoCryptTheme
 import me.wjz.nekocrypt.util.NCWindowManager
 import me.wjz.nekocrypt.util.isSystemApp
@@ -295,9 +295,11 @@ class MyAccessibilityService : AccessibilityService() {
                 NekoCryptTheme(darkTheme = false) {
                     FloatingActionButton(
                         onClick = {
-                            serviceScope.launch {
-                                Toast.makeText(this@MyAccessibilityService, "喵！扫描按钮被点击！", Toast.LENGTH_SHORT).show()
+                            val intent = Intent(this@MyAccessibilityService, ScannerDialogActivity::class.java).apply {
+                                // 从 Service 启动 Activity 需要这个特殊的旗标
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
+                            startActivity(intent)
                         },
                         shape = CircleShape,
                         modifier = Modifier.size(64.dp).alpha(0.9f),

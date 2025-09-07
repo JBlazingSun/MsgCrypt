@@ -48,6 +48,14 @@
             android:taskAffinity=""
             android:excludeFromRecents="true"
             android:exported="false" />
+        <!-- ✨ 新增：在这里登记我们透明的弹窗 Activity -->
+        <activity
+            android:name=".ui.activity.ScannerDialogActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            />
         <!--        申请无障碍权限-->
         <service
             android:name="com.dianming.phoneapp.MyAccessibilityService"

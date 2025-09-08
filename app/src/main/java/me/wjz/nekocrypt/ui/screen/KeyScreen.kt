@@ -80,12 +80,6 @@ fun KeyScreen(modifier: Modifier = Modifier) {
             dataStoreManager.saveSetting(SCAN_BTN_ACTIVE, false)
             Log.d(NekoCryptApp.TAG, "权限不足，已强制关闭扫描开关。")
         }
-        else{   // 如果判断是开启的，就自动创建悬浮窗
-            val intent = Intent(context, MyAccessibilityService::class.java).apply {
-                this.action = MyAccessibilityService.ACTION_SHOW_SCANNER
-            }
-            context.startService(intent)
-        }
     }
 
     LazyColumn(

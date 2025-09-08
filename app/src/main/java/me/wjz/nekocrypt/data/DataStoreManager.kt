@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -59,6 +60,13 @@ class DataStoreManager(private val context: Context) {
         return context.dataStore.data.map { preferences ->
             preferences[key] ?: defaultValue
         }.catch { exception -> throw exception }
+    }
+
+    //提供一个一次性的读取方法
+    suspend fun <T> readSetting(key: Preferences.Key<T>, defaultValue: T): T {
+        // .first() 是一个来自 kotlinx-coroutines-core 的魔法，
+        // 它会等待 Flow 发射第一个值，然后就返回，不再继续监听。
+        return getSettingFlow(key, defaultValue).first()
     }
 
     //通用的写入方法

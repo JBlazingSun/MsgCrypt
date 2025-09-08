@@ -156,6 +156,9 @@ class MyAccessibilityService : AccessibilityService() {
         // 🎯 关键：启动保活服务
         startKeepAliveService()
         observeAppSettings()
+
+        //  这里还要加上判断看是否启用扫描悬浮窗
+        showScannerIfNeed()
     }
 
     // ✨ 新增：重写 onDestroy 方法，这是服务生命周期结束时最后的清理机会
@@ -447,6 +450,13 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     // —————————————————————————— helper ——————————————————————————
+
+    private fun showScannerIfNeed(){
+        serviceScope.launch {
+            val shouldShow = dataStoreManager.readSetting(SettingKeys.SCAN_BTN_ACTIVE, false)
+            if (shouldShow) { showScanner() }
+        }
+    }
 
     /**
      * 调试节点树的函数 (列表全扫描版)

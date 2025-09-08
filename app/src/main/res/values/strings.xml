@@ -133,6 +133,14 @@
     <string name="enable_scanner_mode_description">屏幕上会出现用于扫描当前界面的按钮</string>
     <!--    扫描界面相关-->
     <string name="scanner_dialog_title">扫描结果</string>
-    <string name="scanner_get_result_fail">"获取扫描结果失败！"</string>
+    <string name="scanner_get_result_fail">获取扫描结果失败！</string>
+    <string name="scanner_dialog_section_input">输入框</string>
+    <string name="scanner_dialog_section_send_btn">发送按钮</string>
+    <string name="scanner_dialog_section_msg_list">消息列表</string>
+    <string name="scanner_dialog_section_msg_text">消息气泡</string>
+    <string name="scanner_dialog_card_id">ID</string>
+    <string name="scanner_dialog_card_class">类名</string>
+    <string name="scanner_dialog_card_text">文本</string>
+    <string name="scanner_dialog_card_desc">描述</string>
 
 </resources>

@@ -30,6 +30,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import me.wjz.nekocrypt.AppRegistry
 import me.wjz.nekocrypt.Constant
+import me.wjz.nekocrypt.Constant.SCAN_RESULT
 import me.wjz.nekocrypt.CryptoMode
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.SettingKeys
@@ -37,6 +38,8 @@ import me.wjz.nekocrypt.hook.observeAsState
 import me.wjz.nekocrypt.service.KeepAliveService
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
 import me.wjz.nekocrypt.ui.activity.ScannerDialogActivity
+import me.wjz.nekocrypt.ui.dialog.FoundNodeInfo
+import me.wjz.nekocrypt.ui.dialog.ScanResult
 import me.wjz.nekocrypt.ui.theme.NekoCryptTheme
 import me.wjz.nekocrypt.util.NCWindowManager
 import me.wjz.nekocrypt.util.isSystemApp
@@ -294,13 +297,7 @@ class MyAccessibilityService : AccessibilityService() {
             ) {
                 NekoCryptTheme(darkTheme = false) {
                     FloatingActionButton(
-                        onClick = {
-                            val intent = Intent(this@MyAccessibilityService, ScannerDialogActivity::class.java).apply {
-                                // 从 Service 启动 Activity 需要这个特殊的旗标
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            }
-                            startActivity(intent)
-                        },
+                        onClick = {handleScanScreen()},
                         shape = CircleShape,
                         modifier = Modifier.size(64.dp).alpha(0.9f),
                         elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
@@ -326,6 +323,126 @@ class MyAccessibilityService : AccessibilityService() {
         // 在主线程安全地销毁窗口
         serviceScope.launch(Dispatchers.Main) {
             scanBtnWindowManager?.dismiss()
+        }
+    }
+
+    /**
+     * 它会扫描当前活跃窗口，并尝试找出所有符合条件的节点。
+     * @return 返回一个包含所有扫描结果的 ScanResult 对象。
+     */
+    private fun scanCurrentWindow(): ScanResult {
+        val rootNode = rootInActiveWindow ?:return ScanResult(
+            packageName = "N/A",
+            name = "未知应用",
+            foundInputNodes = emptyList(),
+            foundSendBtnNodes = emptyList(),
+            foundMessageTextNodes = emptyList(),
+            foundMessageListNodes = emptyList()
+        )
+
+        val currentPackageName = rootNode.packageName.toString()
+        val currentAppName = try{
+            val pm = packageManager
+            val appInfo =pm.getApplicationInfo(currentPackageName.toString(), 0)
+            pm.getApplicationLabel(appInfo).toString()
+        }catch (e: Exception){
+            "unknown"
+        }
+        val inputNodes = mutableListOf<FoundNodeInfo>()
+        val sendBtnNodes = mutableListOf<FoundNodeInfo>()
+        val messageTextNodes = mutableListOf<FoundNodeInfo>()
+        val messageListNodes = mutableListOf<FoundNodeInfo>()
+        // 开始递归扫描！
+        findAllNodesRecursively(rootNode, inputNodes, sendBtnNodes, messageTextNodes, messageListNodes)
+
+        // 打包返回
+        return ScanResult(
+            packageName = currentPackageName,
+            name = currentAppName,
+            foundInputNodes = inputNodes,
+            foundSendBtnNodes = sendBtnNodes,
+            foundMessageTextNodes = messageTextNodes,
+            foundMessageListNodes = messageListNodes
+        )
+    }
+
+    /**
+     * ✨ 核心中的核心：递归扫描函数
+     * 它会遍历节点树的每一个角落，并根据特征将节点分类。
+     */
+    private fun findAllNodesRecursively(
+        rootNode: AccessibilityNodeInfo,
+        inputNodes: MutableList<FoundNodeInfo>,
+        sendBtnNodes: MutableList<FoundNodeInfo>,
+        messageTextNodes: MutableList<FoundNodeInfo>,
+        messageListNodes: MutableList<FoundNodeInfo>
+    ){
+        //  用一个内部辅助函数传递是否在列表内状态。
+        fun traverse(currentNode: AccessibilityNodeInfo, isInsideMessageList: Boolean){
+            //  当前节点的类名
+            val className = currentNode.className?.toString() ?: ""
+            //
+            var currentlyInList = isInsideMessageList
+            //  先检查当前节点是否是列表
+            if(!isInsideMessageList && (className.contains("RecyclerView", ignoreCase = true) || className.contains("ListView", ignoreCase = true)))
+            {
+                messageListNodes.add(createFoundNodeInfoFromNode(currentNode))
+                currentlyInList = true // 从这个节点往下，所有子孙都算作“在列表内”
+            }
+
+            //  开始扫描
+            if(currentlyInList){
+                //  如果在列表内，我们只找TextView节点。
+                if (className.contains("TextView", ignoreCase = true) && !currentNode.text.isNullOrBlank()) {
+                    messageTextNodes.add(createFoundNodeInfoFromNode(currentNode))
+                }
+            }else{
+                //  如果不在列表内，就找发送按钮和输入框
+                if (className.contains("EditText", ignoreCase = true)) {
+                    inputNodes.add(createFoundNodeInfoFromNode(currentNode))
+                }
+                // 发送按钮特征：类名是 Button
+                if (className.contains("Button", ignoreCase = true)) {
+                    sendBtnNodes.add(createFoundNodeInfoFromNode(currentNode))
+                }
+            }
+
+            // --- 继续深入，探索子节点 ---
+            for (i in 0 until currentNode.childCount) {
+                currentNode.getChild(i)?.let { child ->
+                    // 将当前“是否在列表内”的状态传递给子节点
+                    traverse(child, currentlyInList)
+                }
+            }
+        }
+
+        //  开始搜索
+        traverse(rootNode, false)
+
+    }
+
+    //  再来个辅助函数，把节点转成我们需要的数据类。
+    private fun createFoundNodeInfoFromNode(node: AccessibilityNodeInfo): FoundNodeInfo {
+        return FoundNodeInfo(
+            className = node.className?.toString() ?: "",
+            resourceId = node.viewIdResourceName,
+            text = node.text?.toString(),
+            contentDescription = node.contentDescription?.toString()
+        )
+    }
+
+    //  处理扫描相关
+    private fun handleScanScreen(){
+        serviceScope.launch {
+            // 扫描当前窗口
+            val scanResult = scanCurrentWindow()
+
+            val intent = Intent(this@MyAccessibilityService, ScannerDialogActivity::class.java).apply {
+                // 从 Service 启动 Activity 需要这个特殊的旗标
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(SCAN_RESULT, scanResult)
+            }
+            startActivity(intent)
         }
     }
 

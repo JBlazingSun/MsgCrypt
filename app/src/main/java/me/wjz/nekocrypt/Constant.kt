@@ -15,6 +15,9 @@ object Constant {
     // ---- 其他 ----
     const val EDIT_TEXT="EditText"
     const val VIEW_ID_BTN = "Button"
+
+    //  扫描intent额外字段的key
+    const val SCAN_RESULT = "scan_result"
 }
 
 object SettingKeys {

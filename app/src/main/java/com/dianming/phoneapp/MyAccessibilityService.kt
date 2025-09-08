@@ -10,6 +10,7 @@ import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -33,6 +34,7 @@ import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.Constant.SCAN_RESULT
 import me.wjz.nekocrypt.CryptoMode
 import me.wjz.nekocrypt.NekoCryptApp
+import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.observeAsState
 import me.wjz.nekocrypt.service.KeepAliveService
@@ -437,6 +439,8 @@ class MyAccessibilityService : AccessibilityService() {
     //  处理扫描相关
     private fun handleScanScreen(){
         serviceScope.launch {
+            Toast.makeText(this@MyAccessibilityService, getString(R.string.scanner_scanning),
+                Toast.LENGTH_SHORT).show()
             // 扫描当前窗口
             val scanResult = scanCurrentWindow()
 

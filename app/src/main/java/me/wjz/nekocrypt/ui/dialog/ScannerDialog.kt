@@ -88,10 +88,10 @@ fun ScannerDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .padding(16.dp).heightIn(screenHeight *0.9f),
+                .padding(16.dp).heightIn(max = screenHeight * 0.8f),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column {
+            Column(modifier = Modifier.padding(16.dp)) {
                 //  总标题
                 Text(
                     text = stringResource(R.string.scanner_dialog_title),

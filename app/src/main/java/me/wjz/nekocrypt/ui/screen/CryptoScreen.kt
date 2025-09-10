@@ -129,7 +129,7 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
 //                .height(180.dp),这里不设置固定高度
-                .verticalScroll(rememberScrollState()),
+                ,
             minLines = 1,//控制默认的最小行数
             maxLines = 6,//控制最大行数
             label = { Text(stringResource(id = R.string.crypto_input_label)) },

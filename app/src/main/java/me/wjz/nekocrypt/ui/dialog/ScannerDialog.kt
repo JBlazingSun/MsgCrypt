@@ -190,23 +190,35 @@ private fun NodeInfoCard(nodeInfo: FoundNodeInfo) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // 模仿 AppHandlerInfoDialog 的 InfoRow 样式来显示信息
-            InfoRow(
-                label = stringResource(R.string.scanner_dialog_card_id),
-                value = nodeInfo.resourceId ?: "N/A"
-            )
+            // resourceId 不为空白时才显示
+            if (nodeInfo.resourceId?.isNotBlank() == true) {
+                InfoRow(
+                    label = stringResource(R.string.scanner_dialog_card_id),
+                    value = nodeInfo.resourceId
+                )
+            }
+
+            // className 总是显示，因为它在数据类里不是可空的
             InfoRow(
                 label = stringResource(R.string.scanner_dialog_card_class),
                 value = nodeInfo.className
             )
-            InfoRow(
-                label = stringResource(R.string.scanner_dialog_card_text),
-                value = nodeInfo.text ?: "N/A"
-            )
-            InfoRow(
-                label = stringResource(R.string.scanner_dialog_card_desc),
-                value = nodeInfo.contentDescription ?: "N/A"
-            )
+
+            // text 不为空白时才显示
+            if (nodeInfo.text?.isNotBlank() == true) {
+                InfoRow(
+                    label = stringResource(R.string.scanner_dialog_card_text),
+                    value = nodeInfo.text
+                )
+            }
+
+            // contentDescription 不为空白时才显示
+            if (nodeInfo.contentDescription?.isNotBlank() == true) {
+                InfoRow(
+                    label = stringResource(R.string.scanner_dialog_card_desc),
+                    value = nodeInfo.contentDescription
+                )
+            }
         }
     }
 }
@@ -236,7 +248,7 @@ private fun InfoRow(label: String, value: String) {
         // 内容
         Surface(
             onClick = {
-                if (value.isNotEmpty() && value != "N/A") {
+                if (value.isNotEmpty()) {
                     clipboardManager.setText(AnnotatedString(value))
                     Toast.makeText(context, "'$value' $hasCopyHint", Toast.LENGTH_SHORT).show()
                 }
@@ -246,7 +258,7 @@ private fun InfoRow(label: String, value: String) {
             color = MaterialTheme.colorScheme.surfaceVariant,
         ) {
             Text(
-                text = value.ifEmpty { "N/A" },
+                text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier

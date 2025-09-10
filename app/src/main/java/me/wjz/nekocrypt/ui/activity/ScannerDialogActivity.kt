@@ -57,6 +57,7 @@ data class ScanResult(
     val foundMessageLists: List<MessageListScanResult>, // ✨ 结构变更
 ) : Parcelable
 
+
 class ScannerDialogActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

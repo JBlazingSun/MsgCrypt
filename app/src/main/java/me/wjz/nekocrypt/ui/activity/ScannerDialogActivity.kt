@@ -2,14 +2,60 @@ package me.wjz.nekocrypt.ui.activity
 
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import kotlinx.parcelize.Parcelize
 import me.wjz.nekocrypt.Constant.SCAN_RESULT
 import me.wjz.nekocrypt.R
-import me.wjz.nekocrypt.ui.dialog.ScanResult
 import me.wjz.nekocrypt.ui.dialog.ScannerDialog
 import me.wjz.nekocrypt.ui.theme.NekoCryptTheme
+
+
+/**
+ * 一个用于封装单个被找到的节点信息的数据类。
+ * @param className 节点的类名 (e.g., "android.widget.EditText")。
+ * @param resourceId 节点的资源 ID (e.g., "com.tencent.mm:id/input_editor")，可能为空。
+ * @param text 节点的文本内容，可能为空。
+ * @param contentDescription 节点的内容描述（常用于无障碍），可能为空。
+ */
+@Parcelize
+data class FoundNodeInfo(
+    val className: String,
+    val resourceId: String?,
+    val text: String?,
+    val contentDescription: String?,
+) : Parcelable
+
+/**
+ * ✨ 全新：用于封装单个消息列表及其内部消息文本的数据类。
+ * 这就是我们的“房子和居民”情报。
+ * @param listContainerInfo 消息列表容器节点本身的信息。
+ * @param messageTexts 在这个容器内部找到的所有消息文本节点列表。
+ */
+@Parcelize
+data class MessageListScanResult(
+    val listContainerInfo: FoundNodeInfo,
+    val messageTexts: List<FoundNodeInfo>
+) : Parcelable
+
+/**
+ * ✨ 升级版：用于封装扫描结果的数据类。
+ * @param packageName 当前应用的包名。
+ * @param name 当前应用的可读名称 (e.g., "xx聊天")。
+ * @param foundInputNodes 扫描到的所有可能的输入框节点列表。
+ * @param foundSendBtnNodes 扫描到的所有可能的发送按钮节点列表。
+ * @param foundMessageLists 扫描到的所有消息列表及其内部消息的集合。
+ */
+@Parcelize
+data class ScanResult(
+    val packageName: String,
+    val name: String,
+    val foundInputNodes: List<FoundNodeInfo>,
+    val foundSendBtnNodes: List<FoundNodeInfo>,
+    val foundMessageLists: List<MessageListScanResult>, // ✨ 结构变更
+) : Parcelable
 
 class ScannerDialogActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -39,9 +39,10 @@ import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.hook.observeAsState
 import me.wjz.nekocrypt.service.KeepAliveService
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
+import me.wjz.nekocrypt.ui.activity.FoundNodeInfo
+import me.wjz.nekocrypt.ui.activity.MessageListScanResult
+import me.wjz.nekocrypt.ui.activity.ScanResult
 import me.wjz.nekocrypt.ui.activity.ScannerDialogActivity
-import me.wjz.nekocrypt.ui.dialog.FoundNodeInfo
-import me.wjz.nekocrypt.ui.dialog.ScanResult
 import me.wjz.nekocrypt.ui.theme.NekoCryptTheme
 import me.wjz.nekocrypt.util.NCWindowManager
 import me.wjz.nekocrypt.util.isSystemApp
@@ -341,8 +342,7 @@ class MyAccessibilityService : AccessibilityService() {
             name = "未知应用",
             foundInputNodes = emptyList(),
             foundSendBtnNodes = emptyList(),
-            foundMessageTextNodes = emptyList(),
-            foundMessageListNodes = emptyList()
+            foundMessageLists = emptyList() // ✨ 结构变更
         )
 
         val currentPackageName = rootNode.packageName.toString()
@@ -353,21 +353,20 @@ class MyAccessibilityService : AccessibilityService() {
         }catch (e: Exception){
             "unknown"
         }
+
         val inputNodes = mutableListOf<FoundNodeInfo>()
         val sendBtnNodes = mutableListOf<FoundNodeInfo>()
-        val messageTextNodes = mutableListOf<FoundNodeInfo>()
-        val messageListNodes = mutableListOf<FoundNodeInfo>()
+        val messageLists = mutableListOf<MessageListScanResult>()
         // 开始递归扫描！
-        findAllNodesRecursively(rootNode, inputNodes, sendBtnNodes, messageTextNodes, messageListNodes)
+        findAllNodesRecursively(rootNode, inputNodes, sendBtnNodes, messageLists) // ✨ 参数变更
 
-        // 打包返回
+        // 打包成“情报文件袋”并返回
         return ScanResult(
             packageName = currentPackageName,
             name = currentAppName,
             foundInputNodes = inputNodes,
             foundSendBtnNodes = sendBtnNodes,
-            foundMessageTextNodes = messageTextNodes,
-            foundMessageListNodes = messageListNodes
+            foundMessageLists = messageLists // ✨ 结构变更
         )
     }
 
@@ -379,34 +378,39 @@ class MyAccessibilityService : AccessibilityService() {
         rootNode: AccessibilityNodeInfo,
         inputNodes: MutableList<FoundNodeInfo>,
         sendBtnNodes: MutableList<FoundNodeInfo>,
-        messageTextNodes: MutableList<FoundNodeInfo>,
-        messageListNodes: MutableList<FoundNodeInfo>
+        messageLists: MutableList<MessageListScanResult>
     ){
-        //  用一个内部辅助函数传递是否在列表内状态。
-        fun traverse(currentNode: AccessibilityNodeInfo, isInsideMessageList: Boolean){
-            //  当前节点的类名
+        //  用一个内部辅助函数，第二个参数用来传递当前所在的“房子”
+        fun traverse(currentNode: AccessibilityNodeInfo, currentListResult: MessageListScanResult?) {
             val className = currentNode.className?.toString() ?: ""
-            //
-            var currentlyInList = isInsideMessageList
-            //  先检查当前节点是否是列表
-            if(!isInsideMessageList && (className.contains("RecyclerView", ignoreCase = true) || className.contains("ListView", ignoreCase = true)))
-            {
-                messageListNodes.add(createFoundNodeInfoFromNode(currentNode))
-                currentlyInList = true // 从这个节点往下，所有子孙都算作“在列表内”
+            var listResultForChildren = currentListResult
+
+            // --- 根据特征进行分类 ---
+
+            // 1. 如果我们还不在任何房子里，检查当前节点是不是一个新“房子”
+            if (currentListResult == null && (className.contains("RecyclerView", ignoreCase = true) || className.contains("ListView", ignoreCase = true))) {
+                // 发现新“房子”，创建一个新的情报条目
+                val newHouse = MessageListScanResult(
+                    listContainerInfo = createFoundNodeInfoFromNode(currentNode),
+                    messageTexts = mutableListOf() // 先创建一个空的“居民”列表
+                )
+                messageLists.add(newHouse)
+                listResultForChildren = newHouse // 把这个新“房子”的信息传递给它的孩子们
             }
 
-            //  开始扫描
-            if(currentlyInList){
-                //  如果在列表内，我们只找TextView节点。
+            // 2. 根据我们当前是否在“房子”里，来决定扫描策略
+            if (listResultForChildren != null) {
+                // ✨ 策略A：在“房子”内部，我们只关心“居民”(带文本的 TextView)
                 if (className.contains("TextView", ignoreCase = true) && !currentNode.text.isNullOrBlank()) {
-                    messageTextNodes.add(createFoundNodeInfoFromNode(currentNode))
+                    // 把找到的“居民”添加到当前“房子”的居民列表里
+                    (listResultForChildren.messageTexts as MutableList).add(createFoundNodeInfoFromNode(currentNode))
                 }
-            }else{
-                //  如果不在列表内，就找发送按钮和输入框
+
+            } else {
+                // ✨ 策略B：在“房子”外部，我们才关心输入框和按钮
                 if (className.contains("EditText", ignoreCase = true)) {
                     inputNodes.add(createFoundNodeInfoFromNode(currentNode))
                 }
-                // 发送按钮特征：类名是 Button
                 if (className.contains("Button", ignoreCase = true)) {
                     sendBtnNodes.add(createFoundNodeInfoFromNode(currentNode))
                 }
@@ -415,14 +419,12 @@ class MyAccessibilityService : AccessibilityService() {
             // --- 继续深入，探索子节点 ---
             for (i in 0 until currentNode.childCount) {
                 currentNode.getChild(i)?.let { child ->
-                    // 将当前“是否在列表内”的状态传递给子节点
-                    traverse(child, currentlyInList)
+                    traverse(child, listResultForChildren)
                 }
             }
         }
-
-        //  开始搜索
-        traverse(rootNode, false)
+        // 从根节点开始，初始不在任何“房子”里
+        traverse(rootNode, null)
 
     }
 

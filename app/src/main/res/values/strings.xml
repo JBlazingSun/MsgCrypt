@@ -137,7 +137,7 @@
     <string name="scanner_dialog_section_input">输入框</string>
     <string name="scanner_dialog_section_send_btn">发送按钮</string>
     <string name="scanner_dialog_section_msg_list">消息列表</string>
-    <string name="scanner_dialog_section_msg_text">消息气泡</string>
+    <string name="scanner_dialog_section_msg_text">文本节点</string>
     <string name="scanner_dialog_card_id">ID</string>
     <string name="scanner_dialog_card_class">类名</string>
     <string name="scanner_dialog_card_text">文本</string>

@@ -1,6 +1,5 @@
 package me.wjz.nekocrypt.ui.dialog
 
-import android.os.Parcelable
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,45 +32,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.parcelize.Parcelize
 import me.wjz.nekocrypt.R
+import me.wjz.nekocrypt.ui.activity.FoundNodeInfo
+import me.wjz.nekocrypt.ui.activity.MessageListScanResult
+import me.wjz.nekocrypt.ui.activity.ScanResult
 
 /**
- * 一个用于封装单个被找到的节点信息的数据类。
- * @param className 节点的类名 (e.g., "android.widget.EditText")。
- * @param resourceId 节点的资源 ID (e.g., "com.tencent.mm:id/input_editor")，可能为空。
- * @param text 节点的文本内容，可能为空。
- * @param contentDescription 节点的内容描述（常用于无障碍），可能为空。
- */
-@Parcelize
-data class FoundNodeInfo(
-    val className: String,
-    val resourceId: String?,
-    val text: String?,
-    val contentDescription: String?,
-) : Parcelable
-
-/**
- * 一个用于封装扫描结果的数据类，可以通过 Intent 传递。
- * @param packageName 当前处理器的包名。
- * @param name 当前处理器的可读名称 (e.g., "xx聊天")。
- * @param foundInputNodes 扫描到的所有可能的输入框节点列表。
- * @param foundSendBtnNodes 扫描到的所有可能的发送按钮节点列表。
- * @param foundMessageTextNodes 扫描到的所有可能的消息文本节点列表。
- * @param foundMessageListNodes 扫描到的所有可能的消息列表容器节点列表。
- */
-@Parcelize
-data class ScanResult(
-    val packageName: String,
-    val name: String,
-    val foundInputNodes: List<FoundNodeInfo>,
-    val foundSendBtnNodes: List<FoundNodeInfo>,
-    val foundMessageTextNodes: List<FoundNodeInfo>,
-    val foundMessageListNodes: List<FoundNodeInfo>,
-) : Parcelable
-
-/**
- * 悬浮扫描按钮点击后显示的对话框 Composable。
+ * 悬浮扫描按钮点击后显示的对话框 Composable (V3 协同版)。
  */
 @Composable
 fun ScannerDialog(
@@ -87,8 +54,9 @@ fun ScannerDialog(
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .padding(16.dp).heightIn(max = screenHeight * 0.8f),
+                .fillMaxWidth(0.9f) // 使用屏幕宽度的90%
+                .padding(16.dp)
+                .heightIn(max = screenHeight * 0.85f), // 最大高度为屏幕的85%
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -106,6 +74,7 @@ fun ScannerDialog(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 使用可滚动的 LazyColumn 来展示所有区块
                 LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
                     item {
                         ScanResultSection(
@@ -119,23 +88,18 @@ fun ScannerDialog(
                             nodes = scanResult.foundSendBtnNodes
                         )
                     }
+                    // ✨ 使用全新的方式来展示消息列表和其内部的消息
                     item {
-                        ScanResultSection(
+                        MessageListSection(
                             title = stringResource(R.string.scanner_dialog_section_msg_list),
-                            nodes = scanResult.foundMessageListNodes
-                        )
-                    }
-                    item {
-                        ScanResultSection(
-                            title = stringResource(R.string.scanner_dialog_section_msg_text),
-                            nodes = scanResult.foundMessageTextNodes
+                            lists = scanResult.foundMessageLists
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- 3. 底部按钮 ---
+                // --- 底部按钮 ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -144,11 +108,52 @@ fun ScannerDialog(
                         Text(stringResource(R.string.accept))
                     }
                 }
-
             }
         }
     }
 }
+
+/**
+ * ✨ 全新：用于显示消息列表区块的 Composable
+ * 它会先展示列表容器的信息，然后嵌套展示其内部的消息文本。
+ */
+@Composable
+private fun MessageListSection(title: String, lists: List<MessageListScanResult>) {
+    if (lists.isNotEmpty()) {
+        Column(modifier = Modifier.padding(bottom = 16.dp)) {
+            Text(
+                text = "$title (${lists.size})",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 遍历每个找到的“房子”
+            lists.forEach { listResult ->
+                // 1. 先显示“房子”本身的信息
+                NodeInfoCard(nodeInfo = listResult.listContainerInfo)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 2. 如果“房子”里有“居民”，就缩进一点，然后展示他们
+                if (listResult.messageTexts.isNotEmpty()) {
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        Text(
+                            text = "└─ ${stringResource(R.string.scanner_dialog_section_msg_text)} (${listResult.messageTexts.size})",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        listResult.messageTexts.forEach { textNode ->
+                            NodeInfoCard(nodeInfo = textNode)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 /**
  * 用于显示一个扫描结果区块（例如 "找到的输入框"）的 Composable。
@@ -251,3 +256,4 @@ private fun InfoRow(label: String, value: String) {
         }
     }
 }
+

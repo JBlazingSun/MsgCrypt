@@ -187,7 +187,8 @@ private fun ScanResultSection(title: String, nodes: List<FoundNodeInfo>) {
 private fun NodeInfoCard(nodeInfo: FoundNodeInfo) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             // resourceId 不为空白时才显示
@@ -243,7 +244,7 @@ private fun InfoRow(label: String, value: String) {
             text = "$label:",
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
-            modifier = Modifier.width(64.dp) // 给标签一个固定宽度，让内容对齐
+            modifier = Modifier.width(48.dp) // 给标签一个固定宽度，让内容对齐
         )
         // 内容
         Surface(
@@ -255,7 +256,7 @@ private fun InfoRow(label: String, value: String) {
             },
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
+            color = MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.5f)
         ) {
             Text(
                 text = value,

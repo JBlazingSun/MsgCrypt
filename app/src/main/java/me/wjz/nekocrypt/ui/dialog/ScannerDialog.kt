@@ -19,6 +19,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -38,15 +43,38 @@ import me.wjz.nekocrypt.ui.activity.MessageListScanResult
 import me.wjz.nekocrypt.ui.activity.ScanResult
 
 /**
+ * 用于封装用户最终选择的节点信息的数据类。
+ */
+data class ScanSelections(
+    val inputNode: FoundNodeInfo,
+    val sendBtnNode: FoundNodeInfo,
+    val messageList: FoundNodeInfo,
+    val messageText: FoundNodeInfo
+)
+
+/**
  * 悬浮扫描按钮点击后显示的对话框 Composable (V3 协同版)。
  */
 @Composable
 fun ScannerDialog(
     scanResult: ScanResult,
     onDismissRequest: () -> Unit,
+    onConfirm: (ScanSelections) -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
+    //  记住用户的选择
+    var selectedInput by remember { mutableStateOf<FoundNodeInfo?>(null) }
+    var selectedSendBtn by remember { mutableStateOf<FoundNodeInfo?>(null) }
+    var selectedList by remember { mutableStateOf<MessageListScanResult?>(null) }
+    var selectedMessageText by remember { mutableStateOf<FoundNodeInfo?>(null) }
+
+    // --- 2. 衍生状态：只有当所有选项都选了，确认按钮才能点击 ---
+    val isConfirmEnabled by remember(selectedInput, selectedSendBtn, selectedList, selectedMessageText) {
+        derivedStateOf {
+            selectedInput != null && selectedSendBtn != null && selectedList != null && selectedMessageText != null
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismissRequest,

@@ -1,6 +1,8 @@
 package me.wjz.nekocrypt.ui.dialog
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,7 +13,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +34,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -105,22 +110,32 @@ fun ScannerDialog(
                 // 使用可滚动的 LazyColumn 来展示所有区块
                 LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
                     item {
-                        ScanResultSection(
+                        SelectableSection(
                             title = stringResource(R.string.scanner_dialog_section_input),
-                            nodes = scanResult.foundInputNodes
+                            nodes = scanResult.foundInputNodes,
+                            selectedNode = selectedInput,
+                            onNodeSelected = { selectedInput = it }
                         )
                     }
                     item {
-                        ScanResultSection(
+                        SelectableSection(
                             title = stringResource(R.string.scanner_dialog_section_send_btn),
-                            nodes = scanResult.foundSendBtnNodes
+                            nodes = scanResult.foundSendBtnNodes,
+                            selectedNode = selectedSendBtn,
+                            onNodeSelected = { selectedSendBtn = it }
                         )
                     }
-                    // ✨ 使用全新的方式来展示消息列表和其内部的消息
                     item {
-                        MessageListSection(
+                        MessageListSelectionSection(
                             title = stringResource(R.string.scanner_dialog_section_msg_list),
-                            lists = scanResult.foundMessageLists
+                            lists = scanResult.foundMessageLists,
+                            selectedList = selectedList,
+                            selectedText = selectedMessageText,
+                            onListSelected = {
+                                selectedList = it
+                                selectedMessageText = null // ✨ 切换列表时，重置消息文本的选择
+                            },
+                            onTextSelected = { selectedMessageText = it }
                         )
                     }
                 }
@@ -133,6 +148,23 @@ fun ScannerDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismissRequest) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            // ✨ 点击确认时，把所有选择打包成 ScanSelections 并回传
+                            onConfirm(
+                                ScanSelections(
+                                    inputNode = selectedInput!!,
+                                    sendBtnNode = selectedSendBtn!!,
+                                    messageList = selectedList!!.listContainerInfo,
+                                    messageText = selectedMessageText!!
+                                )
+                            )
+                        },
+                        enabled = isConfirmEnabled // ✨ 绑定按钮的可用状态
+                    ) {
                         Text(stringResource(R.string.accept))
                     }
                 }
@@ -142,38 +174,53 @@ fun ScannerDialog(
 }
 
 /**
- * ✨ 全新：用于显示消息列表区块的 Composable
- * 它会先展示列表容器的信息，然后嵌套展示其内部的消息文本。
+ * ✨ 全新：用于选择“消息列表”和“消息文本”的复合区块
  */
 @Composable
-private fun MessageListSection(title: String, lists: List<MessageListScanResult>) {
+private fun MessageListSelectionSection(
+    title: String,
+    lists: List<MessageListScanResult>,
+    selectedList: MessageListScanResult?,
+    selectedText: FoundNodeInfo?,
+    onListSelected: (MessageListScanResult) -> Unit,
+    onTextSelected: (FoundNodeInfo) -> Unit
+) {
     if (lists.isNotEmpty()) {
-        Column(modifier = Modifier.padding(bottom = 16.dp)) {
-            Text(
-                text = "$title (${lists.size})",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+        Column(modifier = Modifier.padding(bottom = 12.dp)) {
+            Text(text = "$title (${lists.size})", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 遍历每个找到的“房子”
             lists.forEach { listResult ->
-                // 1. 先显示“房子”本身的信息
-                NodeInfoCard(nodeInfo = listResult.listContainerInfo)
+                // 1. 先把每个列表容器作为可选项显示
+                SelectableNodeInfoCard(
+                    nodeInfo = listResult.listContainerInfo,
+                    isSelected = listResult == selectedList,
+                    onSelected = { onListSelected(listResult) }
+                )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 2. 如果“房子”里有“居民”，就缩进一点，然后展示他们
+                // 2. 如果当前列表被选中了，就“展开”它内部的消息文本作为下一级选项
                 if (listResult.messageTexts.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                    Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
                         Text(
                             text = "└─ ${stringResource(R.string.scanner_dialog_section_msg_text)} (${listResult.messageTexts.size})",
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        listResult.messageTexts.forEach { textNode ->
-                            NodeInfoCard(nodeInfo = textNode)
-                            Spacer(modifier = Modifier.height(8.dp))
+                        // ✨ 核心修改：只有当父列表被选中时，才动态展示详细的子节点卡片
+                        AnimatedVisibility(visible = listResult == selectedList) {
+                            Column {
+                                listResult.messageTexts.forEach { textNode ->
+                                    SelectableNodeInfoCard(
+                                        nodeInfo = textNode,
+                                        isSelected = textNode == selectedText,
+                                        onSelected = { onTextSelected(textNode) }
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                            }
                         }
                     }
                 }
@@ -182,26 +229,26 @@ private fun MessageListSection(title: String, lists: List<MessageListScanResult>
     }
 }
 
-
 /**
- * 用于显示一个扫描结果区块（例如 "找到的输入框"）的 Composable。
- * 如果节点列表为空，则什么都不显示。
+ * ✨ 全新：通用的、用于单选的区块（用于输入框和发送按钮）
  */
 @Composable
-private fun ScanResultSection(title: String, nodes: List<FoundNodeInfo>) {
-    // 只有当列表里有内容时，才显示这个区块
+private fun SelectableSection(
+    title: String,
+    nodes: List<FoundNodeInfo>,
+    selectedNode: FoundNodeInfo?,
+    onNodeSelected: (FoundNodeInfo) -> Unit
+) {
     if (nodes.isNotEmpty()) {
         Column(modifier = Modifier.padding(bottom = 16.dp)) {
-            // 区块标题
-            Text(
-                text = "$title (${nodes.size})",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Text(text = "$title (${nodes.size})", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(8.dp))
-            // 遍历并显示每个节点的卡片
             nodes.forEach { node ->
-                NodeInfoCard(nodeInfo = node)
+                SelectableNodeInfoCard(
+                    nodeInfo = node,
+                    isSelected = node == selectedNode,
+                    onSelected = { onNodeSelected(node) }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -209,44 +256,36 @@ private fun ScanResultSection(title: String, nodes: List<FoundNodeInfo>) {
 }
 
 /**
- * 用于显示单个节点详细信息的卡片 Composable。
+ * ✨ 全新：带单选按钮的节点信息卡片
  */
 @Composable
-private fun NodeInfoCard(nodeInfo: FoundNodeInfo) {
+private fun SelectableNodeInfoCard(
+    nodeInfo: FoundNodeInfo,
+    isSelected: Boolean,
+    onSelected: () -> Unit
+) {
+    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(2.dp, borderColor, RoundedCornerShape(12.dp))
+            .selectable(
+                selected = isSelected,
+                onClick = onSelected,
+                role = Role.RadioButton
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // resourceId 不为空白时才显示
-            if (nodeInfo.resourceId?.isNotBlank() == true) {
-                InfoRow(
-                    label = stringResource(R.string.scanner_dialog_card_id),
-                    value = nodeInfo.resourceId
-                )
-            }
-
-            // className 总是显示，因为它在数据类里不是可空的
-            InfoRow(
-                label = stringResource(R.string.scanner_dialog_card_class),
-                value = nodeInfo.className
-            )
-
-            // text 不为空白时才显示
-            if (nodeInfo.text?.isNotBlank() == true) {
-                InfoRow(
-                    label = stringResource(R.string.scanner_dialog_card_text),
-                    value = nodeInfo.text
-                )
-            }
-
-            // contentDescription 不为空白时才显示
-            if (nodeInfo.contentDescription?.isNotBlank() == true) {
-                InfoRow(
-                    label = stringResource(R.string.scanner_dialog_card_desc),
-                    value = nodeInfo.contentDescription
-                )
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                if (nodeInfo.resourceId?.isNotBlank()==true) InfoRow(label = stringResource(R.string.scanner_dialog_card_id), value = nodeInfo.resourceId)
+                InfoRow(label = stringResource(R.string.scanner_dialog_card_class), value = nodeInfo.className)
+                if (nodeInfo.text?.isNotBlank()==true) InfoRow(label = stringResource(R.string.scanner_dialog_card_text), value = nodeInfo.text)
+                if (nodeInfo.contentDescription?.isNotBlank()==true) InfoRow(label = stringResource(R.string.scanner_dialog_card_desc), value = nodeInfo.contentDescription)
             }
         }
     }

@@ -84,7 +84,9 @@ class ScannerDialogActivity: ComponentActivity() {
             NekoCryptTheme {
                 // 在这里显示我们的对话框
                 // 当对话框请求关闭时，我们直接结束这个透明的 Activity
-                ScannerDialog(scanResult,onDismissRequest = { finish() })
+                ScannerDialog(scanResult,onDismissRequest = { finish() }, onConfirm = {
+
+                })
             }
         }
     }

@@ -1,29 +1,58 @@
 package me.wjz.nekocrypt.ui.screen
 
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.ui.ClickableSettingItem
 import me.wjz.nekocrypt.ui.ColorSettingItem
 import me.wjz.nekocrypt.ui.SettingsHeader
 import me.wjz.nekocrypt.ui.SliderSettingItem
-import me.wjz.nekocrypt.ui.SwitchSettingItem
+import java.io.BufferedReader
+import java.net.HttpURLConnection
+import java.net.URL
 
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
+    var showAboutDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope() // 获取协程作用域，用于执行异步任务
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         // verticalArrangement = Arrangement.spacedBy(16.dp), 选项之间不需要间隔
@@ -141,39 +170,6 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             )
         }
 
-
-        item {
-            SwitchSettingItem(
-                key = SettingKeys.IS_GLOBAL_ENCRYPTION_MODE,
-                defaultValue = false,
-                icon = { Icon(Icons.Default.Lock, contentDescription = "Enable Encryption") },
-                title = "启用全局加密",
-                subtitle = "开启后，将自动处理复制的文本",
-            )
-        }
-        item {
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color
-            )
-        }
-        item {
-            SwitchSettingItem(
-                key = SettingKeys.IS_GLOBAL_ENCRYPTION_MODE,
-                defaultValue = false,
-                icon = { Icon(Icons.Default.Lock, contentDescription = "Enable Encryption") },
-                title = "123123",
-                subtitle = "开启后，测试测试",
-            )
-        }
-        item {
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color
-            )
-        }
         // 第二个分组：关于
         item {
             SettingsHeader("关于")
@@ -182,8 +178,128 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             ClickableSettingItem(
                 icon = { Icon(Icons.Default.Info, contentDescription = "About App") },
                 title = "关于 NekoCrypt",
-                onClick = { /* 在这里处理点击事件，比如弹出一个对话框 */ }
+                onClick = { showAboutDialog=true }
             )
+        }
+        item {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
+        }
+        item {
+            val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            ClickableSettingItem(
+                icon = { Icon(Icons.Default.Build, contentDescription = "Version") },
+                // ✨ 在 title 的 Composable 槽位里，自定义我们的布局！
+                title = stringResource(R.string.version,versionName?:"unknown"),
+                onClick = { handleCheckUpdate(context, scope, versionName?:"N/A") }
+            )
+        }
+        item {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
+        }
+        item {
+            ClickableSettingItem(
+                icon = { Icon(Icons.Default.Link, contentDescription = "GitHub Link") },
+                title = stringResource(R.string.github),
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, "https://github.com/WJZ-P/NekoCrypt".toUri())
+                    context.startActivity(intent)
+                }
+            )
+        }
+
+    }
+
+    if(showAboutDialog){
+        AboutDialog(onDismissRequest = {showAboutDialog = false})
+    }
+}
+
+/**
+ * 用于显示关于信息的对话框
+ */
+@Composable
+private fun AboutDialog(onDismissRequest: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        icon = { Icon(Icons.Default.Info, contentDescription = null) },
+        title = { Text(text = stringResource(R.string.about_dialog_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.about_dialog_content))
+                // 你可以在这里添加更多信息，比如版本号、作者、开源链接等
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.accept))
+            }
+        }
+    )
+}
+
+/**
+ * 一个用于解析 GitHub API /releases/latest 端点返回的 JSON 的数据类。
+ * @Serializable 注解让它可以被 kotlinx.serialization 库处理。
+ * @SerialName 注解用于将 JSON 中的 snake_case 字段名映射到我们的 camelCase 属性名。
+ */
+@Serializable
+data class GitHubRelease(
+    @SerialName("tag_name")
+    val tagName: String, // 版本标签，例如 "v1.1.0"
+
+    @SerialName("html_url")
+    val htmlUrl: String, // 该发布页面的网址
+)
+
+private fun handleCheckUpdate(context: Context, scope: CoroutineScope, versionName: String) {
+    scope.launch {
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, context.getString(R.string.checking_for_update), Toast.LENGTH_SHORT).show()
+        }
+
+        // 切换到 IO 线程执行网络请求
+        val latestRelease: GitHubRelease? = withContext(Dispatchers.IO) {
+            try {
+                val url = URL("https://api.github.com/repos/WJZ-P/NekoCrypt/releases/latest")
+                val connection = url.openConnection() as HttpURLConnection
+                val jsonText = connection.inputStream.bufferedReader().use(BufferedReader::readText)
+                Log.d(NekoCryptApp.TAG,jsonText)
+
+                // 使用 kotlinx.serialization 解析 JSON
+                Json { ignoreUnknownKeys = true }.decodeFromString<GitHubRelease>(jsonText)
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+
+        // 回到主线程更新 UI
+        withContext(Dispatchers.Main) {
+            if (latestRelease == null) {
+                Toast.makeText(context, context.getString(R.string.check_for_update_failed), Toast.LENGTH_SHORT).show()
+                return@withContext
+            }
+
+            // 比较版本号（简单地移除 'v' 前缀进行比较）
+            val latestVersionName = latestRelease.tagName.removePrefix("v")
+
+            if (versionName != "N/A" && latestVersionName > versionName) {
+                Toast.makeText(context, context.getString(R.string.check_for_update_failed,latestRelease.tagName), Toast.LENGTH_SHORT).show()
+                // 引导用户去发布页面查看
+                val intent = Intent(Intent.ACTION_VIEW, latestRelease.htmlUrl.toUri())
+                context.startActivity(intent)
+            } else {
+                Toast.makeText(context, context.getString(R.string.is_newest_version), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }

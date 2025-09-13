@@ -15,6 +15,10 @@
     <string name="not_installed">未安装</string>
     <string name="open_file">打开文件</string>
     <string name="cannot_open_file">打开文件失败</string>
+    <string name="checking_for_update">检查更新中...</string>
+    <string name="check_for_update_failed">检查更新失败，请检查网络连接</string>
+    <string name="is_newest_version">"已经是最新版本啦 (ฅ´ω`ฅ)"</string>
+    <string name="find_new_version">发现新版本: %s！</string>
     <string name="save_to_gallery">保存到相册</string>
     <string name="image_saved_to_gallery_success">成功保存到相册</string>
     <string name="image_saved_to_gallery_failed">保存到相册失败</string>
@@ -94,6 +98,10 @@
     <string name="decryption_window_show_time">解密密文展示时长</string>
     <string name="decryption_window_show_time_desc">设置解密密文悬浮窗的显示时间</string>
     <string name="about">关于</string>
+    <string name="about_dialog_title">关于NekoCrypt</string>
+    <string name="version">软件版本：%s</string>
+    <string name="github">Github 项目地址</string>
+    <string name="about_dialog_content">NekoCrypt (喵密) 是一款方便好用的全局APP加解密软件！(ฅ´ω`ฅ)\n\n双击输入框可以拉起附件发送界面哦！✨\n\n如果您喜欢本软件，请到Github项目主页为我点上一个Star吧！ପ(๑•̀ㅂ•́)و✧\n\n本项目仅供学习交流，任何法律问题均需用户自行负责哦~ ( •̀ ω •́ )✧ 使用NekoCrypt即表示您同意该条款。\n\n    ——Made by WJZ_P with love❤️.</string>
     <!--    设置：界面相关-->
     <string name="crypto_ui_settings">功能界面设置</string>
     <string name="decryption_window_position_update_delay">弹窗位置更新延时</string>

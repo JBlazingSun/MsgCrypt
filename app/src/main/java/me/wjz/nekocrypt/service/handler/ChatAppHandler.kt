@@ -15,11 +15,6 @@ interface ChatAppHandler {
     val packageName: String
 
     /**
-     * 应用昵称
-     */
-    val name: String
-
-    /**
      * 聊天界面输入框的资源ID。
      */
     val inputId: String

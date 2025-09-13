@@ -12,8 +12,6 @@ class WeChatHandler : BaseChatAppHandler() {
 
     override val packageName: String
         get() = PACKAGE_NAME
-    override val name: String
-        get() = APP_NAME
 
     override val inputId: String
         get() = ID_INPUT

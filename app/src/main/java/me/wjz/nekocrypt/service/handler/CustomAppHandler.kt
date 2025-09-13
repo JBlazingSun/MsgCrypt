@@ -14,7 +14,6 @@ data class CustomAppHandler(
     var customName: String,
 
     // 需要重写 ChatAppHandler 接口中的所有属性
-    override val name: String,
     override val packageName: String,
     override val inputId: String,
     override val sendBtnId: String,

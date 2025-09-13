@@ -143,5 +143,9 @@
     <string name="scanner_dialog_card_text">文本</string>
     <string name="scanner_dialog_card_desc">描述</string>
     <string name="scanner_scanning">描述</string>
+    <string name="scanner_help_dialog_title">扫描功能介绍</string>
+    <string name="scanner_help_dialog_intro">必须选择正确的输入框、发送按钮、消息列表、消息节点。</string>
+    <string name="scanner_help_dialog_instruction">点击即可选中，只有四种全部选择完才可以点击确认，之后就自动保存当前软件的节点信息用于加解密。可通过节点的具体内容确认是否是所需节点。</string>
+
 
 </resources>

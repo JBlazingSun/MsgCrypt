@@ -238,10 +238,17 @@ fun SupportedAppItem(handler: ChatAppHandler){
     val context = LocalContext.current
     var appIcon by remember { mutableStateOf<Drawable?>(null) }
     var isAppInstalled by remember { mutableStateOf(false) }
-    // 尝试获取应用图标
+    var appName by remember { mutableStateOf("") }
+    // 尝试获取应用图标和名称
     LaunchedEffect(handler.packageName) {
         try{
-            appIcon = context.packageManager.getApplicationIcon(handler.packageName)
+            val pm = context.packageManager
+            // 1. 先获取应用的“身份证” (ApplicationInfo)
+            val appInfo = pm.getApplicationInfo(handler.packageName, 0)
+            // 2. 从“身份证”里同时获取“照片”和“姓名”
+            appIcon = pm.getApplicationIcon(appInfo)
+            appName = pm.getApplicationLabel(appInfo).toString()
+
             isAppInstalled = true
         }catch (e: PackageManager.NameNotFoundException) {
             appIcon = null
@@ -281,7 +288,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
             } else {
                 Icon(
                     imageVector = Icons.Default.HelpOutline,
-                    contentDescription = "应用未安装", modifier = Modifier.size(48.dp),
+                    contentDescription = "app not install", modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -289,7 +296,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
             // 然后放APP名和包名
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    handler.name + if (!isAppInstalled) " — ${stringResource(R.string.not_installed)}" else "",
+                    appName + if (!isAppInstalled) " — ${stringResource(R.string.not_installed)}" else "",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

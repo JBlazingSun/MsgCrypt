@@ -36,6 +36,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -68,8 +70,8 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
     val decryptFailed = stringResource(id = R.string.crypto_decrypt_fail)//解密错误的text。
     var isDecryptFailed by remember { mutableStateOf(false) }
     // 新增：用于统计的状态
-    var charCount by remember { mutableStateOf(0) }
-    var elapsedTime by remember { mutableStateOf(0L) }
+    var charCount by remember { mutableIntStateOf(0) }
+    var elapsedTime by remember { mutableLongStateOf(0L) }
     // 新增一个状态，用来控制密钥管理对话框的显示和隐藏
     var showKeyDialog by remember { mutableStateOf(false) }
     //自动加解密

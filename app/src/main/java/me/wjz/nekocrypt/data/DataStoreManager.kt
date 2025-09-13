@@ -116,11 +116,17 @@ class DataStoreManager(private val context: Context) {
     }
 
     /**
-     * ✨ 新增：保存自定义应用列表。
-     * 它接收一个 CustomAppHandler 列表，将其序列化为JSON字符串，然后存入DataStore。
+     * 保存自定义应用列表。
+     * 追加形式保存
      */
-    suspend fun saveCustomApps(apps: Array<CustomAppHandler>) {
-        val jsonString = Json.encodeToString(apps)
+    suspend fun addCustomApp(newApp: CustomAppHandler) {
+        // 1. 读取当前的列表
+        val currentApps = getCustomAppsFlow().first().toMutableList()
+        // 2. 添加新的配置
+        currentApps.add(newApp)
+        // 3. 将更新后的列表序列化成 JSON 字符串
+        val jsonString = Json.encodeToString(currentApps)
+        // 4. 保存回 DataStore
         saveSetting(SettingKeys.CUSTOM_APPS, jsonString)
     }
 

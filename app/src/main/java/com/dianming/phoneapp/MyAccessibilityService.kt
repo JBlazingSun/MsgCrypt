@@ -285,8 +285,8 @@ class MyAccessibilityService : AccessibilityService() {
             screenWidth = displayMetrics.widthPixels
         }
 
-        // 2. 计算初始位置（右侧居中），并创建一个 Rect 对象
-        val initialX = screenWidth
+        // 2. 计算初始位置（左侧居中），并创建一个 Rect 对象
+        val initialX = 0
         val initialY = screenHeight / 2
         val initialPositionRect = Rect(initialX, initialY, initialX, initialY)
 

@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import kotlinx.parcelize.Parcelize
 import me.wjz.nekocrypt.Constant.SCAN_RESULT
 import me.wjz.nekocrypt.R
+import me.wjz.nekocrypt.ui.dialog.ScanSelections
 import me.wjz.nekocrypt.ui.dialog.ScannerDialog
 import me.wjz.nekocrypt.ui.theme.NekoCryptTheme
 
@@ -84,10 +85,14 @@ class ScannerDialogActivity: ComponentActivity() {
             NekoCryptTheme {
                 // 在这里显示我们的对话框
                 // 当对话框请求关闭时，我们直接结束这个透明的 Activity
-                ScannerDialog(scanResult,onDismissRequest = { finish() }, onConfirm = {
+                ScannerDialog(scanResult,onDismissRequest = { finish() }, onConfirm = { scanSelections->
 
                 })
             }
         }
+    }
+
+    private fun handleSaveCustomAPPHandler(scanSelections: ScanSelections){
+
     }
 }

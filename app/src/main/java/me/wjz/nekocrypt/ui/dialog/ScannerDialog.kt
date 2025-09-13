@@ -15,9 +15,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -74,6 +80,8 @@ fun ScannerDialog(
     var selectedList by remember { mutableStateOf<MessageListScanResult?>(null) }
     var selectedMessageText by remember { mutableStateOf<FoundNodeInfo?>(null) }
 
+    //  helpDialog
+    var showHelpDialog by remember { mutableStateOf(false) }
     // --- 2. 衍生状态：只有当所有选项都选了，确认按钮才能点击 ---
     val isConfirmEnabled by remember(selectedInput, selectedSendBtn, selectedList, selectedMessageText) {
         derivedStateOf {
@@ -87,17 +95,29 @@ fun ScannerDialog(
     ) {
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.9f) // 使用屏幕宽度的90%
+                .fillMaxWidth(0.95f) // 使用屏幕宽度的90%
                 .padding(16.dp)
                 .heightIn(max = screenHeight * 0.85f), // 最大高度为屏幕的85%
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                //  总标题
-                Text(
-                    text = stringResource(R.string.scanner_dialog_title),
-                    style = MaterialTheme.typography.headlineSmall
-                )
+                // --- 核心修改：总标题和一个可点击的帮助图标 ---
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.scanner_dialog_title),
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    IconButton(onClick = { showHelpDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.HelpOutline,
+                            contentDescription = "instruction"
+                        )
+                    }
+                }
 
                 // 显示当前应用的包名和名称
                 Text(
@@ -114,7 +134,9 @@ fun ScannerDialog(
                             title = stringResource(R.string.scanner_dialog_section_input),
                             nodes = scanResult.foundInputNodes,
                             selectedNode = selectedInput,
-                            onNodeSelected = { selectedInput = it }
+                            onNodeSelected = {
+                                selectedInput = if (selectedInput == it) null else it
+                            }
                         )
                     }
                     item {
@@ -122,7 +144,7 @@ fun ScannerDialog(
                             title = stringResource(R.string.scanner_dialog_section_send_btn),
                             nodes = scanResult.foundSendBtnNodes,
                             selectedNode = selectedSendBtn,
-                            onNodeSelected = { selectedSendBtn = it }
+                            onNodeSelected = { selectedSendBtn = if (selectedSendBtn == it) null else it}
                         )
                     }
                     item {
@@ -132,10 +154,11 @@ fun ScannerDialog(
                             selectedList = selectedList,
                             selectedText = selectedMessageText,
                             onListSelected = {
-                                selectedList = it
+                                selectedList = if(selectedList == it) null else it
+
                                 selectedMessageText = null // ✨ 切换列表时，重置消息文本的选择
                             },
-                            onTextSelected = { selectedMessageText = it }
+                            onTextSelected = { selectedMessageText =if(selectedMessageText == it)null else it }
                         )
                     }
                 }
@@ -171,6 +194,10 @@ fun ScannerDialog(
             }
         }
     }
+
+    if (showHelpDialog) {
+        ScannerHelpDialog(onDismissRequest = { showHelpDialog = false })
+    }
 }
 
 /**
@@ -198,32 +225,31 @@ private fun MessageListSelectionSection(
                     onSelected = { onListSelected(listResult) }
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
                 // 2. 如果当前列表被选中了，就“展开”它内部的消息文本作为下一级选项
-                if (listResult.messageTexts.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
-                        Text(
-                            text = "└─ ${stringResource(R.string.scanner_dialog_section_msg_text)} (${listResult.messageTexts.size})",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        // ✨ 核心修改：只有当父列表被选中时，才动态展示详细的子节点卡片
-                        AnimatedVisibility(visible = listResult == selectedList) {
-                            Column {
-                                listResult.messageTexts.forEach { textNode ->
-                                    SelectableNodeInfoCard(
-                                        nodeInfo = textNode,
-                                        isSelected = textNode == selectedText,
-                                        onSelected = { onTextSelected(textNode) }
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
+
+                Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
+                    Text(
+                        text = "└─ ${stringResource(R.string.scanner_dialog_section_msg_text)} (${listResult.messageTexts.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // ✨ 核心修改：只有当父列表被选中时，才动态展示详细的子节点卡片
+                    AnimatedVisibility(visible = listResult == selectedList) {
+                        Column {
+                            listResult.messageTexts.forEach { textNode ->
+                                SelectableNodeInfoCard(
+                                    nodeInfo = textNode,
+                                    isSelected = textNode == selectedText,
+                                    onSelected = { onTextSelected(textNode) }
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -337,3 +363,22 @@ private fun InfoRow(label: String, value: String) {
     }
 }
 
+@Composable
+private fun ScannerHelpDialog(onDismissRequest: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        icon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+        title = { Text(text = stringResource(R.string.scanner_help_dialog_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.scanner_help_dialog_intro))
+                Text(stringResource(R.string.scanner_help_dialog_instruction))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.accept))
+            }
+        }
+    )
+}

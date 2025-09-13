@@ -16,12 +16,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -39,12 +35,6 @@ fun MainMenu() {
     val pagerState = rememberPagerState(pageCount = { navItems.size })
     //  用自己的协程作用域
     val scope = rememberCoroutineScope()
-    // 搞个intState追踪当前选中标签页
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-
-    LaunchedEffect(pagerState.targetPage) {
-        selectedTabIndex = pagerState.targetPage
-    }
 
     Scaffold(
         topBar = {
@@ -69,12 +59,9 @@ fun MainMenu() {
                             )
                         },
                         label = { Text(stringResource(id = screen.titleResId)) },
-                        // 每个图标是否选中，应该跟 selectedTabIndex 比较
-                        selected = (index == selectedTabIndex),
+                        // ✨ 核心二：直接从 pagerState 读取当前页面，不再需要 selectedTabIndex
+                        selected = (index == pagerState.currentPage),
                         onClick = {
-                            // 1. 更新我们自己的状态
-                            selectedTabIndex = index
-                            // 2. 使用协程命令 Pager 滚动到新页面
                             scope.launch {
                                 pagerState.animateScrollToPage(index)
                             }

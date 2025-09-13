@@ -164,10 +164,28 @@ NekoCrypt 就此诞生。
 
 条件限制，目前只支持10M以内的图片、文件发送，将来会扩展。
 
+### 适配额外聊天软件
+
+设置页面，可以打开扫描开关
+
+<p align="center">
+    <img src="markdown/自定义应用.jpg" alt="扫描结果" style="width: 400px;">
+</p>
+<br>
+
+切到你想要适配的聊天软件，确保界面上显示了发送按钮(有的软件只有输入框有字才会显示发送按钮)，点击猫爪悬浮窗自动扫描。
+
+<p align="center">
+    <img src="markdown/扫描结果.png" alt="扫描结果" style="width: 400px;">
+</p>
+<br>
+
+必须选择四个要素：输入框、发送按钮、消息列表、消息节点后，才可以点击确认。确认后自动保存配置，就可以使用了。
+
 
 ## 下载链接
 
-#### [点击高速下载](https://beisudianxueuser.oss-cn-beijing.aliyuncs.com/storage/user_avatar/ciallo/2025/08/23/a911aef0a0c2018ad23489ffd263f581/NekoCrypt-v1.0.1-release.apk)
+#### [点击高速下载v1.0.1(并不总是最新，建议从release下载)](https://beisudianxueuser.oss-cn-beijing.aliyuncs.com/storage/user_avatar/ciallo/2025/08/23/a911aef0a0c2018ad23489ffd263f581/NekoCrypt-v1.0.1-release.apk)
 #### 右侧release内也可下载
 
 ## 支持软件
@@ -176,8 +194,8 @@ NekoCrypt 就此诞生。
 |   NekoCrypt   | 是否支持 | 备注     |
 | :---:        |    :----:   |          :---: |
 | QQ      |✅      | 完全支持   |
-| 微信   |     🚧    | 部分设备无效/未知原因      |
-| 更多   |         | 敬请期待     |
+| 微信   |     ✅    | 部分设备无效/未知原因      |
+| 更多   |    ✅      | 使用扫描功能自助添加     |
 
 <br>
 
@@ -195,7 +213,7 @@ NekoCrypt 就此诞生。
 
 ## 鸣谢
 
-- 暂无。
+- 一位不愿透露姓名的神秘人士。
 
 
 ## 重要声明

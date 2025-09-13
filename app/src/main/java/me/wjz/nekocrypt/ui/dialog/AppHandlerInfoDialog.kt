@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ fun AppHandlerInfoDialog(
     appName:String,
     handler: ChatAppHandler,
     onDismissRequest: () -> Unit,
+    onDeleteRequest: (() -> Unit)? = null
 ){
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -51,16 +53,33 @@ fun AppHandlerInfoDialog(
         },
         // 确认按钮
         confirmButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.cancel))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                // 只有当 onDeleteRequest 被提供时，才显示删除按钮
+                if (onDeleteRequest != null) {
+                    Button(
+                        onClick = {
+                            // 先执行删除操作，然后关闭对话框
+                            onDeleteRequest()
+                            onDismissRequest()
+                        }
+                    ) {
+                        Text(
+                            stringResource(R.string.delete)
+                        )
+                    }
+                }
+                // 关闭按钮
+                TextButton(onClick = onDismissRequest) {
+                    Text(stringResource(R.string.cancel)) // 将“取消”改为“关闭”，语义更清晰
+                }
             }
         }
     )
 }
 
-/**
- * ✨ “魔法大改造”后的 InfoRow！
- */
 @Composable
 private fun InfoRow(label: String, value: String) {
     val clipboardManager = LocalClipboardManager.current

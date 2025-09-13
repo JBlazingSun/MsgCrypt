@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +48,7 @@ import androidx.core.net.toUri
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import com.dianming.phoneapp.MyAccessibilityService
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import kotlinx.coroutines.launch
 import me.wjz.nekocrypt.AppRegistry
 import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
 import me.wjz.nekocrypt.NekoCryptApp
@@ -73,7 +75,7 @@ fun KeyScreen(modifier: Modifier = Modifier) {
     val customApps by rememberCustomAppListState()
     val context = LocalContext.current
     val dataStoreManager = LocalDataStoreManager.current
-
+    val scope = rememberCoroutineScope() // 获取协程作用域，用于执行删除操作
     //  进入UI时做一些判断逻辑
     LaunchedEffect(Unit) {
         if (!isAccessibilityServiceEnabled(context) || !Settings.canDrawOverlays(context)) {
@@ -135,7 +137,7 @@ fun KeyScreen(modifier: Modifier = Modifier) {
                 color = DividerDefaults.color
             )
         }
-
+        //  自定义APP列表
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -163,7 +165,13 @@ fun KeyScreen(modifier: Modifier = Modifier) {
                     } else {
                         // 遍历自定义应用列表，显示每一项
                         customApps.forEach { customHandler ->
-                            SupportedAppItem(handler = customHandler)
+                            SupportedAppItem(handler = customHandler,
+                                onDelete = {
+                                    scope.launch {
+                                        dataStoreManager.deleteCustomApp(customHandler.packageName)
+                                        Toast.makeText(context, context.getString(R.string.key_screen_delete_config_toast), Toast.LENGTH_SHORT).show()
+                                    }
+                                })
                         }
                     }
                 }
@@ -229,7 +237,7 @@ fun KeyScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SupportedAppItem(handler: ChatAppHandler){
+fun SupportedAppItem(handler: ChatAppHandler, onDelete: (() -> Unit)? = null){
     var isEnabled by rememberDataStoreState(booleanPreferencesKey("app_enabled_${handler.packageName}"),
         defaultValue = true
     )
@@ -261,7 +269,8 @@ fun SupportedAppItem(handler: ChatAppHandler){
         AppHandlerInfoDialog(
             appName=appName,
             handler = handler,
-            onDismissRequest = { showHandlerInfoDialog = false }
+            onDismissRequest = { showHandlerInfoDialog = false },
+            onDeleteRequest = onDelete
         )
     }
 

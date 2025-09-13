@@ -131,6 +131,16 @@ class DataStoreManager(private val context: Context) {
     }
 
     /**
+     * 删除包名对应的自定义handler
+     */
+    suspend fun deleteCustomApp(packageName:String){
+        val currentApps = getCustomAppsFlow().first().toMutableList()
+        currentApps.removeAll { it.packageName == packageName }
+        val jsonString = Json.encodeToString(currentApps)
+        saveSetting(SettingKeys.CUSTOM_APPS, jsonString)
+    }
+
+    /**
      * ✨ 新增：获取自定义应用列表的 Flow。
      * 它从 DataStore 读取JSON字符串，并将其反序列化为 CustomAppHandler 列表。
      * 如果解析失败或没有数据，返回一个空列表。

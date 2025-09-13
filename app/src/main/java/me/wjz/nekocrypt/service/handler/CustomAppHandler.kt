@@ -1,7 +1,5 @@
 package me.wjz.nekocrypt.service.handler
 
-import android.view.accessibility.AccessibilityEvent
-import com.dianming.phoneapp.MyAccessibilityService
 import kotlinx.serialization.Serializable
 
 /**
@@ -17,12 +15,4 @@ data class CustomAppHandler(
     override val messageTextId: String,
     override val messageListClassName: String
 
-) : ChatAppHandler {
-    // ChatAppHandler 中的方法可以暂时为空，因为自定义应用的行为会更通用
-    override fun onHandlerActivated(service: MyAccessibilityService) {}
-    override fun onHandlerDeactivated() {}
-    override fun onAccessibilityEvent(
-        event: AccessibilityEvent,
-        service: MyAccessibilityService
-    ) {}
-}
+) : BaseChatAppHandler()

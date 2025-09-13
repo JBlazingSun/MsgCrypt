@@ -47,7 +47,7 @@ fun rememberKeyArrayState(initialValue: Array<String> = emptyArray()): State<Arr
  * @return 一个 State<Array<String>> 对象，它的 .value 会随着DataStore的变化而自动更新。
  */
 @Composable
-fun rememberCustomAppState(initialValue: List<CustomAppHandler> = emptyList()): State<List<CustomAppHandler>> {
+fun rememberCustomAppListState(initialValue: List<CustomAppHandler> = emptyList()): State<List<CustomAppHandler>> {
     val dataStoreManager = LocalDataStoreManager.current
     return dataStoreManager.getCustomAppsFlow().collectAsState(initial = initialValue)
 }

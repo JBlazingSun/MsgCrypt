@@ -128,12 +128,11 @@ class MyAccessibilityService : AccessibilityService() {
         dataStoreManager.getSettingFlow(SettingKeys.SHOW_ATTACHMENT_VIEW_DOUBLE_CLICK_THRESHOLD, 250)
     }, initialValue = 250)
 
+    //  结合了自定义APP和内置APP的map，用来判断是否启用handler
+    private var combinedHandlerMap: Map<String, ChatAppHandler> = emptyMap()
+    // 一个集合，用于跟踪我们已经为哪些包名启动了监听，防止重复
+    private val observedPackages = mutableSetOf<String>()
     // —————————————————————————— override ——————————————————————————
-
-    // handler工厂方法
-    private val handlerFactory = AppRegistry.allHandlers.associate { handler ->
-        handler.packageName to {handler}
-    }
     // 判断handler是否active
     private val enabledAppsCache = mutableMapOf<String, Boolean>()
 
@@ -159,18 +158,16 @@ class MyAccessibilityService : AccessibilityService() {
         // 🎯 关键：启动保活服务
         startKeepAliveService()
         observeAppSettings()
-
-        //  这里还要加上判断看是否启用扫描悬浮窗
         showScannerIfNeed()
     }
 
-    // ✨ 新增：重写 onDestroy 方法，这是服务生命周期结束时最后的清理机会
+    // 重写 onDestroy 方法，这是服务生命周期结束时最后的清理机会
     override fun onDestroy() {
         super.onDestroy()
         Log.d(tag, "无障碍服务正在销毁...")
-        // ✨ 非常重要：取消协程作用域，释放所有运行中的协程，防止内存泄漏
+        // 取消协程作用域，释放所有运行中的协程，防止内存泄漏
         serviceScope.cancel()
-        // 🎯 关键：停止保活服务
+        // 停止保活服务
         stopKeepAliveService()
         // 关掉scanner
         hideScanner()
@@ -194,11 +191,11 @@ class MyAccessibilityService : AccessibilityService() {
         val eventPackage = event.packageName?.toString() ?: "unknown" // 事件来自的包名
 
         // 情况一：事件来自我们支持的应用，并且打开了这个应用的对应开关
-        if (handlerFactory.containsKey(eventPackage) && enabledAppsCache[eventPackage] == true) {
+        if (combinedHandlerMap.containsKey(eventPackage) && enabledAppsCache[eventPackage] == true) {
             // 如果当前没有处理器，或者处理器不是对应这个App的，就进行切换
             if (currentHandler?.packageName != eventPackage) {
                 currentHandler?.onHandlerDeactivated()
-                currentHandler = handlerFactory[eventPackage]?.invoke()
+                currentHandler = combinedHandlerMap[eventPackage]
                 currentHandler?.onHandlerActivated(this)
             }
 
@@ -222,13 +219,6 @@ class MyAccessibilityService : AccessibilityService() {
             // 否则，即使收到了其他包的事件，但只要活跃窗口没变，就保持处理器不变，忽略这些“噪音”事件。
         }
 
-        // 打印事件名
-//        if (event.packageName == PACKAGE_NAME_QQ) {
-//            Log.d(
-//                tag,
-//                "QQ事件类型: ${AccessibilityEvent.eventTypeToString(event.eventType)} | 类名: ${event.className} | 文本: ${event.text} | 描述: ${event.contentDescription}"
-//            )
-//        }
     }
 
     /**
@@ -563,24 +553,39 @@ class MyAccessibilityService : AccessibilityService() {
      * 并将最新状态更新到内存缓存 `enabledAppsCache` 中。
      */
     private fun observeAppSettings() {
-        if (handlerFactory.keys.isEmpty()) {
-            Log.w(tag, "handlerFactory 是空的，无法监听应用设置。")
-            return
-        }
+        // 遍历所有支持的应用，包括自定义和内置
+        serviceScope.launch {
+            dataStoreManager.getCustomAppsFlow().collect { customAppList ->
+                val newMap = mutableMapOf<String, ChatAppHandler>()
 
-        Log.d(tag, "开始监听这些App的开关状态: ${handlerFactory.keys}")
+                // 1. 先添加所有预设应用
+                AppRegistry.allHandlers.forEach { handler ->
+                    newMap[handler.packageName] = handler
+                }
 
-        // 遍历所有支持的应用
-        handlerFactory.keys.forEach { packageName ->
-            // 为每个应用启动一个独立的协程来监听其设置
-            serviceScope.launch {
-                val key = booleanPreferencesKey("app_enabled_${packageName}")
-                dataStoreManager.getSettingFlow(key, true) // 默认值为true，与UI保持一致
-                    .collect { isEnabled ->
-                        // 当从DataStore获取到新值时，更新我们的内存缓存
-                        enabledAppsCache[packageName] = isEnabled
-                        Log.d(tag, "应用开关状态更新 -> $packageName: $isEnabled")
+                // 2. 再添加所有自定义应用（如果包名相同，会自动覆盖预设的）
+                customAppList.forEach { handler ->
+                    newMap[handler.packageName] = handler
+                }
+
+                // 3. 更新全局的处理器 Map
+                combinedHandlerMap = newMap
+                Log.d(tag, "处理器列表已更新，当前共 ${combinedHandlerMap.size} 个处理器。")
+
+                // 4. 为总名册里的所有应用启动（或确认已有）开关状态监听
+                combinedHandlerMap.keys.forEach { packageName ->
+                    // observedPackages 会确保我们只为每个应用启动一次监听
+                    if (observedPackages.add(packageName)) {
+                        serviceScope.launch {
+                            val key = booleanPreferencesKey("app_enabled_$packageName")
+                            dataStoreManager.getSettingFlow(key, true)
+                                .collect { isEnabled ->
+                                    enabledAppsCache[packageName] = isEnabled
+                                    Log.d(tag, "应用开关状态更新 -> $packageName: $isEnabled")
+                                }
+                        }
                     }
+                }
             }
         }
     }

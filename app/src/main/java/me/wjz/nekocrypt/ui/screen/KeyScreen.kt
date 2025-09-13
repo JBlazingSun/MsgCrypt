@@ -54,7 +54,7 @@ import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
 import me.wjz.nekocrypt.SettingKeys.SCAN_BTN_ACTIVE
 import me.wjz.nekocrypt.data.LocalDataStoreManager
-import me.wjz.nekocrypt.data.rememberCustomAppState
+import me.wjz.nekocrypt.data.rememberCustomAppListState
 import me.wjz.nekocrypt.hook.rememberDataStoreState
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
 import me.wjz.nekocrypt.ui.SettingsHeader
@@ -70,7 +70,7 @@ fun KeyScreen(modifier: Modifier = Modifier) {
     var currentKey by rememberDataStoreState(CURRENT_KEY, DEFAULT_SECRET_KEY)
     var showKeyDialog by remember { mutableStateOf(false) }     //控制密钥管理对话框的显示和隐藏
     // 自定义APP列表
-    val customApps by rememberCustomAppState()
+    val customApps by rememberCustomAppListState()
     val context = LocalContext.current
     val dataStoreManager = LocalDataStoreManager.current
 

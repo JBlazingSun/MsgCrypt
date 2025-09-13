@@ -282,7 +282,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
                 Image(
                     // 用Google的Accompanist
                     painter = rememberDrawablePainter(drawable = appIcon),
-                    contentDescription = "${handler.name} 图标", // ✨ 使用 handler.name
+                    contentDescription = "${appName} 图标", // ✨ 使用 handler.name
                     modifier = Modifier.size(48.dp)
                 )
             } else {

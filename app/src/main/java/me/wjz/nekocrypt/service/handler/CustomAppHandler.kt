@@ -10,9 +10,6 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CustomAppHandler(
-    // 用户为这个配置起的名字
-    var customName: String,
-
     // 需要重写 ChatAppHandler 接口中的所有属性
     override val packageName: String,
     override val inputId: String,

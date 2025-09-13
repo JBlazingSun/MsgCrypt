@@ -32,13 +32,14 @@ import me.wjz.nekocrypt.service.handler.ChatAppHandler
 
 @Composable
 fun AppHandlerInfoDialog(
+    appName:String,
     handler: ChatAppHandler,
     onDismissRequest: () -> Unit,
 ){
     AlertDialog(
         onDismissRequest = onDismissRequest,
         // 标题
-        title = { Text(text = "${handler.name} - 配置详情") },
+        title = { Text(text = "${appName} - 配置详情") },
         // 内容
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

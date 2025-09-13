@@ -70,7 +70,7 @@ data class ScanSelections(
 fun ScannerDialog(
     scanResult: ScanResult,
     onDismissRequest: () -> Unit,
-    onConfirm: (ScanSelections) -> Unit
+    onConfirm: (ScanSelections,ScanResult) -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
@@ -183,7 +183,7 @@ fun ScannerDialog(
                                     sendBtnNode = selectedSendBtn!!,
                                     messageList = selectedList!!.listContainerInfo,
                                     messageText = selectedMessageText!!
-                                )
+                                ),scanResult
                             )
                         },
                         enabled = isConfirmEnabled // ✨ 绑定按钮的可用状态

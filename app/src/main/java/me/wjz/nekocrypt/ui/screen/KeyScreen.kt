@@ -259,6 +259,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
 
     if (showHandlerInfoDialog) {
         AppHandlerInfoDialog(
+            appName=appName,
             handler = handler,
             onDismissRequest = { showHandlerInfoDialog = false }
         )
@@ -282,7 +283,7 @@ fun SupportedAppItem(handler: ChatAppHandler){
                 Image(
                     // 用Google的Accompanist
                     painter = rememberDrawablePainter(drawable = appIcon),
-                    contentDescription = "${appName} 图标", // ✨ 使用 handler.name
+                    contentDescription = "$appName 图标", // ✨ 使用 handler.name
                     modifier = Modifier.size(48.dp)
                 )
             } else {

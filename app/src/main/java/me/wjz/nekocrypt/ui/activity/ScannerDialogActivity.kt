@@ -6,10 +6,13 @@ import android.os.Parcelable
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import me.wjz.nekocrypt.Constant.SCAN_RESULT
+import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
-import me.wjz.nekocrypt.ui.dialog.ScanSelections
+import me.wjz.nekocrypt.service.handler.CustomAppHandler
 import me.wjz.nekocrypt.ui.dialog.ScannerDialog
 import me.wjz.nekocrypt.ui.theme.NekoCryptTheme
 
@@ -63,6 +66,8 @@ class ScannerDialogActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val dataStoreManager = (application as NekoCryptApp).dataStoreManager
+
         // ✨ 核心魔法：从送来的“快递盒”(Intent)中，把名叫"scan_result"的“包裹”取出来
         val scanResult = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // 对于 Android 13 (API 33) 及以上版本，使用新的、类型安全的方法
@@ -83,16 +88,30 @@ class ScannerDialogActivity: ComponentActivity() {
 
         setContent {
             NekoCryptTheme {
+
                 // 在这里显示我们的对话框
                 // 当对话框请求关闭时，我们直接结束这个透明的 Activity
-                ScannerDialog(scanResult,onDismissRequest = { finish() }, onConfirm = { scanSelections->
+                ScannerDialog(scanResult,onDismissRequest = { finish() }, onConfirm ={ scanSelections,scanResult ->
+                    lifecycleScope.launch {
+                        val newHandler = CustomAppHandler(
+                            packageName = scanResult.packageName,
+                            inputId = scanSelections.inputNode.resourceId ?: "",
+                            sendBtnId = scanSelections.sendBtnNode.resourceId ?: "",
+                            messageTextId = scanSelections.messageText.resourceId ?: "",
+                            messageListClassName = scanSelections.messageList.className
+                        )
 
+                        dataStoreManager.addCustomApp(newHandler)
+                        // 3. 给出成功提示并关闭窗口
+                        Toast.makeText(
+                            this@ScannerDialogActivity,
+                            getString(R.string.scanner_config_saved_toast),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
+                    }
                 })
             }
         }
-    }
-
-    private fun handleSaveCustomAPPHandler(scanSelections: ScanSelections){
-
     }
 }

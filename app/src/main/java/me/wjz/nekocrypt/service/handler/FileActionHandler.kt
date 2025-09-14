@@ -12,17 +12,17 @@ import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.content.FileProvider.getUriForFile
+import com.dianming.phoneapp.MyAccessibilityService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.wjz.nekocrypt.R
-import com.dianming.phoneapp.MyAccessibilityService
 import me.wjz.nekocrypt.ui.dialog.FilePreviewDialog
 import me.wjz.nekocrypt.util.CryptoDownloader
 import me.wjz.nekocrypt.util.NCFileProtocol
 import me.wjz.nekocrypt.util.NCWindowManager
-import java.io.File
+import me.wjz.nekocrypt.util.getCacheFileFor
+import me.wjz.nekocrypt.util.getUriForFile
 import java.io.IOException
 
 /**
@@ -42,13 +42,13 @@ class FileActionHandler(private val service: MyAccessibilityService) {
         dismiss() // 先关闭旧的
 
         // 根据文件信息生成本地缓存的唯一路径
-        val targetFile = getCacheFileFor(fileInfo)
+        val targetFile = getCacheFileFor(service,fileInfo)
 
         // 检查缓存文件是否完整
         if (targetFile.exists() && targetFile.length() == fileInfo.size) {
             Log.d(tag, "文件已在缓存中找到: ${targetFile.path}")
             // ✨ 如果缓存命中，直接为文件生成安全的Uri
-            downloadedFileUri = getUriForFile(targetFile)
+            downloadedFileUri = getUriForFile(service,targetFile)
             downloadProgress = null
         } else {
             Log.d(tag, "文件未缓存或不完整，准备下载。")
@@ -98,7 +98,7 @@ class FileActionHandler(private val service: MyAccessibilityService) {
         if(downloadProgress != null)  return // 保证健壮性，防止重复点击
 
         service.serviceScope.launch {
-            val targetFile = getCacheFileFor(fileInfo)
+            val targetFile = getCacheFileFor(service,fileInfo)
             try{
                 downloadProgress = 0
                 // download会suspend。
@@ -111,7 +111,7 @@ class FileActionHandler(private val service: MyAccessibilityService) {
                 if(result.isSuccess){
                     val file = result.getOrThrow()
                     // ✨ 下载成功后，为新文件生成安全的Uri并更新状态
-                    downloadedFileUri = getUriForFile(file)
+                    downloadedFileUri = getUriForFile(service,file)
                     Log.d(tag, "文件下载成功，Uri: $downloadedFileUri")
                 }else{
                     val error = result.exceptionOrNull()?.message ?: "未知错误"
@@ -129,19 +129,6 @@ class FileActionHandler(private val service: MyAccessibilityService) {
         withContext(Dispatchers.Main) {
             Toast.makeText(service.applicationContext, string, duration).show()
         }
-    }
-
-    private fun getCacheFileFor(fileInfo: NCFileProtocol): File{
-        // 总是用外部缓存，方便分享之类的操作
-        val baseDir = service.externalCacheDir ?: service.cacheDir
-        val downloadDir = File(baseDir,"download").apply { mkdirs() }
-        // 用唯一文件名，避免重名之类的
-        val fileName = fileInfo.name.let { name ->
-            val dot = name.lastIndexOf('.')
-            if (dot == -1) "${name}-${fileInfo.url.hashCode()}"
-            else "${name.substring(0, dot)}-${fileInfo.url.hashCode()}${name.substring(dot)}"
-        }
-        return File(downloadDir,fileName)
     }
 
     private fun openFile(uri: Uri,fileInfo: NCFileProtocol){
@@ -166,12 +153,6 @@ class FileActionHandler(private val service: MyAccessibilityService) {
                 showToast(service.getString(R.string.cannot_open_file))
             }
         }
-    }
-
-    private fun getUriForFile(file: File):Uri{
-        return getUriForFile(service,
-            "${service.packageName}.provider",  // 这个地方的authority一定要和manifest里面配置的一样
-            file)
     }
 
     // 根据uri和文件名保存到系统相册，并返回操作结果。

@@ -1,5 +1,14 @@
 package me.wjz.nekocrypt.ui.screen
 
+import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -40,6 +49,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,13 +60,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
+import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
 import me.wjz.nekocrypt.hook.rememberDataStoreState
+import me.wjz.nekocrypt.ui.dialog.FilePreviewDialog
 import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
+import me.wjz.nekocrypt.util.CryptoDownloader
 import me.wjz.nekocrypt.util.CryptoManager
 import me.wjz.nekocrypt.util.CryptoManager.appendNekoTalk
+import me.wjz.nekocrypt.util.NCFileProtocol
+import me.wjz.nekocrypt.util.getCacheFileFor
+import me.wjz.nekocrypt.util.getUriForFile
+import java.io.IOException
 
 @Composable
 fun CryptoScreen(modifier: Modifier = Modifier) {
@@ -74,37 +95,68 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
     var elapsedTime by remember { mutableLongStateOf(0L) }
     // 新增一个状态，用来控制密钥管理对话框的显示和隐藏
     var showKeyDialog by remember { mutableStateOf(false) }
+
+    //  管理文件弹窗和下载相关
+    var fileInfoToShow by remember { mutableStateOf<NCFileProtocol?>(null) }
+    var downloadProgress by remember { mutableStateOf<Int?>(null) }
+    var downloadedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var isImageSavedThisTime by remember { mutableStateOf(false) }
+
     //自动加解密
-    LaunchedEffect(inputText) {
+    LaunchedEffect(inputText, secretKey) {
         if (inputText.isEmpty()) {
             outputText = ""
-            // 输入为空时重置统计数据
+            fileInfoToShow = null // 清空文件信息
             charCount = 0
             elapsedTime = 0L
             return@LaunchedEffect
         }
 
-        val startTime = System.currentTimeMillis() // 记录开始时间
-        var ciphertextCharCount = 0 // 临时变量，用于存储密文长度
+        val startTime = System.currentTimeMillis()
+        var ciphertextCharCount = 0
 
-        val resultMsg = if (CryptoManager.containsCiphertext(inputText)) {
-            //走解密
+        // 先判断是不是密文
+        if (CryptoManager.containsCiphertext(inputText)) {
             isEncryptMode = false
-            ciphertextCharCount = inputText.length // 解密时，输入框内容就是密文
-            CryptoManager.decrypt(inputText, secretKey)
+            ciphertextCharCount = inputText.length
+            val decryptedText = CryptoManager.decrypt(inputText, secretKey)
+
+            // 再判断解密后的内容是不是文件协议
+            val fileInfo = decryptedText?.let { NCFileProtocol.fromString(it) }
+
+            if (fileInfo != null) {
+                // --- 是文件！准备显示弹窗 ---
+                outputText = "" // 清空普通文本输出
+                isDecryptFailed = false
+                // 检查文件是否已缓存
+                val targetFile = getCacheFileFor(context, fileInfo)
+                if (targetFile.exists() && targetFile.length() == fileInfo.size) {
+                    downloadedFileUri = getUriForFile(context, targetFile)
+                    downloadProgress = null
+                } else {
+                    downloadedFileUri = null
+                    downloadProgress = null
+                }
+                isImageSavedThisTime = false // 重置保存状态
+                fileInfoToShow = fileInfo // ✨ 触发弹窗显示！
+            } else {
+                // --- 是普通文本 ---
+                fileInfoToShow = null // 确保文件弹窗不显示
+                isDecryptFailed = decryptedText == null
+                outputText = decryptedText ?: decryptFailed
+            }
         } else {
+            // --- 是原文，执行加密 ---
             isEncryptMode = true
+            fileInfoToShow = null
             val ciphertext = CryptoManager.encrypt(inputText, secretKey).appendNekoTalk()
-            ciphertextCharCount = ciphertext.length // 加密时，输出结果是密文
-            ciphertext
+            ciphertextCharCount = ciphertext.length
+            outputText = ciphertext
         }
 
-        val endTime = System.currentTimeMillis() // 记录结束时间
-        elapsedTime = endTime - startTime // 计算耗时
-
-        isDecryptFailed = resultMsg == null
-        outputText = resultMsg ?: decryptFailed
-        charCount = ciphertextCharCount // 更新状态
+        val endTime = System.currentTimeMillis()
+        elapsedTime = endTime - startTime
+        charCount = ciphertextCharCount
     }
 
     Column(
@@ -238,6 +290,40 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
         if(showKeyDialog){
             KeyManagementDialog(onDismissRequest = { showKeyDialog = false })
         }
+
+        //  加上文件展示dialog
+        fileInfoToShow?.let { fileInfo ->
+            val scope= rememberCoroutineScope()
+            FilePreviewDialog(
+                fileInfo = fileInfo,
+                downloadProgress = downloadProgress,
+                downloadedFileUri = downloadedFileUri,
+                isImageSavedThisTime = isImageSavedThisTime,
+                onDismissRequest = { fileInfoToShow = null },
+                onDownloadRequest = { info ->
+                    // 在协程中启动下载
+                    scope.launch {
+                        val targetFile = getCacheFileFor(context, info)
+                        downloadProgress = 0
+                        val result = CryptoDownloader.download(
+                            fileInfo = info,
+                            targetFile = targetFile,
+                            onProgress = { progress -> downloadProgress = progress }
+                        )
+                        if (result.isSuccess) {
+                            downloadedFileUri = getUriForFile(context, result.getOrThrow())
+                        } else {
+                            Toast.makeText(context, "下载失败: ${result.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
+                        }
+                        downloadProgress = null
+                    }
+                },
+                onOpenRequest = { uri -> openFile(context, scope,uri, fileInfo) },
+                onSaveToGalleryRequest = { uri ->
+                    scope.launch { isImageSavedThisTime = saveImageToGallery(context, uri, fileInfo) }
+                }
+            )
+        }
     }
 }
 
@@ -353,4 +439,84 @@ fun KeySelector(
             )
         }
     }
+}
+
+private fun openFile(context: Context, scope: CoroutineScope, uri: Uri, fileInfo: NCFileProtocol){
+    scope.launch {
+        try{
+            // 1. ✨ 从原始文件名中获取文件后缀
+            val extension = fileInfo.name.substringAfterLast('.', "")
+            // 2. ✨ 使用 MimeTypeMap 将后缀转换为标准的MIME类型
+            val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
+                ?: "*/*" // 如果找不到，使用通用类型
+
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri,mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+
+        } catch (e: Exception) {
+            Log.e(NekoCryptApp.TAG, "打开文件失败", e)
+            Toast.makeText(context,context.getString(R.string.cannot_open_file),Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+private suspend fun saveImageToGallery(context: Context,uri: Uri, fileInfo: NCFileProtocol): Boolean {
+
+    val success = withContext(Dispatchers.IO) {
+        runCatching {
+            val extension = fileInfo.name.substringAfterLast('.', "")
+            val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+
+            // ContentValues 就像一个“档案袋”，我们把新文件的所有信息（元数据）都放进去。
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileInfo.name)      // 文件在相册里显示的名字。
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)         // 文件的mime类型
+                // 档案3 & 4 (仅限 Android 10 及以上)：
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    // 告诉系统要把这个文件放在公共的“相册”文件夹里。
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                    // 先把文件标记为“待定”状态。这意味着在文件内容被完全写入之前，
+                    // 其他应用（包括相册自己）是看不到这个文件的，可以防止出现损坏的半成品文件。
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+            }
+
+            // 用我们写好的信息，去申请一个URI
+            val imageUri = context.contentResolver.insert(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+                ?: throw IOException("无法在相册中创建新文件。")
+
+            // 使用我们新的imageUri，写入文件
+            context.contentResolver.openOutputStream(imageUri).use { outputStream ->
+                context.contentResolver.openInputStream(uri).use { inputStream ->
+                    requireNotNull(inputStream) { "无法打开缓存文件的输入流" }
+                    requireNotNull(outputStream) { "无法打开相册文件的输出流" }
+                    inputStream.copyTo(outputStream)
+                }
+            }
+
+            // (仅限 Android 10 及以上) 文件内容已经写完，我们再次更新档案，
+            // 把“待定”状态改为0，正式通知系统：“文件已准备就绪，可以对外展示了！”
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                contentValues.clear()
+                contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                context.contentResolver.update(imageUri, contentValues, null, null)
+            }
+
+            //顺利完成，返回true
+            true
+        }.onFailure { e ->
+            Log.e(NekoCryptApp.TAG, "保存图片到相册失败", e)
+            false // 返回失败
+        }.getOrDefault(false) // 拿不到，默认就返回false
+    }
+    if (success) Toast.makeText(context,context.getString(R.string.image_saved_to_gallery_success),Toast.LENGTH_SHORT).show()
+    else Toast.makeText(context,context.getString(R.string.image_saved_to_gallery_failed),Toast.LENGTH_SHORT).show()
+    return success
 }

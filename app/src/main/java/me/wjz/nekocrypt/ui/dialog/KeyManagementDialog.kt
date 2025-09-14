@@ -325,7 +325,7 @@ private fun KeyEditItem(
                     }
                 },
             // 用 placeholder 感觉比 label 更适合这里的UI
-            placeholder = { Text("输入新密钥...") },
+            placeholder = { Text(stringResource(R.string.key_screen_new_key_placeholder)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = {

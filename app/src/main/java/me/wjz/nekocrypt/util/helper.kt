@@ -1,11 +1,14 @@
 package me.wjz.nekocrypt.util
 
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.FileProvider
 import me.wjz.nekocrypt.NekoCryptApp
+import java.io.File
 import java.io.IOException
 import java.util.Locale
 import kotlin.math.log10
@@ -152,4 +155,27 @@ fun getImageAspectRatio(uri: Uri): Float? {
   */
 fun AccessibilityNodeInfo.isEmpty(): Boolean {
     return this.packageName == null || this.viewIdResourceName == null
+}
+
+//  获取文件缓存
+fun getCacheFileFor(context: Context, fileInfo: NCFileProtocol): File{
+    // 总是用外部缓存，方便分享之类的操作
+    val baseDir = context.externalCacheDir ?: context.cacheDir
+    val downloadDir = File(baseDir,"download").apply { mkdirs() }
+    // 用唯一文件名，避免重名之类的
+    val fileName = fileInfo.name.let { name ->
+        val dot = name.lastIndexOf('.')
+        if (dot == -1) "${name}-${fileInfo.url.hashCode()}"
+        else "${name.substring(0, dot)}-${fileInfo.url.hashCode()}${name.substring(dot)}"
+    }
+    return File(downloadDir,fileName)
+}
+
+//  根据File拿Uri
+fun getUriForFile(context: Context, file: File):Uri{
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.provider",  // 这个地方的authority一定要和manifest里面配置的一样
+        file
+    )
 }

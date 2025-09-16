@@ -1,5 +1,6 @@
 package me.wjz.nekocrypt.util
 
+import android.R.id.input
 import me.wjz.nekocrypt.R
 import java.io.InputStream
 import java.io.OutputStream
@@ -112,8 +113,8 @@ object CryptoManager {
     /**
      * 判断给定字符串是否包含密文
      */
-    fun containsCiphertext(input: String): Boolean {
-        return input.any { STEALTH_CHAR_TO_INDEX_MAP.containsKey(it) }
+    fun String.containsCiphertext(): Boolean{
+        return this.any { STEALTH_CHAR_TO_INDEX_MAP.containsKey(it) }
     }
 
     fun deriveKeyFromString(keyString: String): SecretKey {
@@ -264,41 +265,32 @@ object CryptoManager {
         return fullNekoTalk.substring(0, middleIndex) + this + fullNekoTalk.substring(middleIndex)
     }
 
-//    styles: {
-//        Bangboo: {//邦布语
-//            length: [2, 5],
-//            content: ['嗯呢...', '哇哒！', '嗯呢！', '嗯呢哒！', '嗯呐呐！', '嗯哒！', '嗯呢呢！']
-//        },
-//        Hilichurl: {//丘丘语
-//            length: [2, 5],
-//            content: ['Muhe ye!', 'Ye dada!', 'Ya yika!', 'Biat ye！', 'Dala si？', 'Yaya ika！', 'Mi? Dada!', 'ye pupu!', 'gusha dada!']
-//        },
-//        Nier: {//Nier: AutoMata，尼尔语, is that the price I'm paying for my past mistakes?
-//            length: [5, 8],
-//            content: [
-//            "Ee ", "ser ", "les ", "hii ", "san ", "mia ", "ni ", "Escalei ", "lu ", "push ", "to ", "lei ",
-//            "Schmosh ", "juna ", "wu ", "ria ", "e ", "je ", "cho ", "no ",
-//            "Nasico ", "whosh ", "pier ", "wa ", "nei ", "Wananba ", "he ", "na ", "qua ", "lei ",
-//            "Sila ", "schmer ", "ya ", "pi ", "pa ", "lu ", "Un ", "schen ", "ta ", "tii ", "pia ", "pa ", "ke ", "lo "
-//            ]
-//        },
-//        Neko: {//猫娘语
-//            length: [3, 5],
-//            content: ["嗷呜!", "咕噜~", "喵~", "喵咕~", "喵喵~", "喵?", "喵喵！", "哈！", "喵呜...", "咪咪喵！", "咕咪?"]
-//        },
-//        Doggo: { // 小狗语
-//            length: [2, 5],
-//            content: ["汪汪！", "汪呜~", "嗷呜~", "呜汪？", "汪汪呜！", "汪呜呜~", "嗷嗷！"]
-//        },
-//
-//        Birdie: { // 小鸟语
-//            length: [2, 5],
-//            content: ["啾啾~", "咕咕！", "叽叽~", "啾啾啾！", "叽咕？", "啾啾？", "咕啾~"]
-//        },
-//
-//    },
 }
 
 enum class CiphertextStyleType(val displayNameResId:Int,content:List<String>){
-
+    NEKO(
+        displayNameResId = R.string.cipher_style_neko,  // 猫娘语
+        content = listOf("嗷呜!", "咕噜~", "喵~", "喵咕~", "喵喵~", "喵?", "喵喵！", "哈！", "喵呜...", "咪咪喵！", "咕咪?")
+    ),
+    BANGBOO(
+        displayNameResId = R.string.cipher_style_bangboo, // 邦布语
+        content = listOf("嗯呢...", "哇哒！", "嗯呢！", "嗯呢哒！", "嗯呐呐！", "嗯哒！", "嗯呢呢！")
+    ),
+    HILICHURLIAN(
+        displayNameResId = R.string.cipher_style_Hilichurlian, //丘丘语
+        content = listOf("Muhe ye!", "Ye dada!", "Ya yika!", "Biat ye！", "Dala si？", "Yaya ika！", "Mi? Dada!",
+            "ye pupu!", "gusha dada!","Dala？","Mosi mita！","Mani ye！","Biat ye！","Todo yo.","tiga mitono!","Biat, gusha!","Unu dada!","Mimi movo!")
+    ),
+    NIER(
+    displayNameResId = R.string.cipher_style_nier, // 尼尔语
+    content = listOf(
+    "Ee ", "ser ", "les ", "hii ", "san ", "mia ", "ni ", "Escalei ", "lu ", "push ", "to ", "lei ",
+    "Schmosh ", "juna ", "wu ", "ria ", "e ", "je ", "cho ", "no ",
+    "Nasico ", "whosh ", "pier ", "wa ", "nei ", "Wananba ", "he ", "na ", "qua ", "lei ",
+    "Sila ", "schmer ", "ya ", "pi ", "pa ", "lu ", "Un ", "schen ", "ta ", "tii ", "pia ", "pa ", "ke ", "lo ")
+    ),
+    MANBO(
+        displayNameResId = R.string.cipher_style_manbo, //  曼波！
+        content = listOf("曼波~","哈吉米~","哈吉米咩那咩路多~","曼波!","曼波...","欧码叽哩，曼波！","叮咚鸡！","哈压库！","哈压库~","哈吉米！","哦耶~","duang~")
+    )
 }

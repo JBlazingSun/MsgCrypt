@@ -2,6 +2,7 @@ package me.wjz.nekocrypt
 
 import androidx.annotation.StringRes
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import me.wjz.nekocrypt.service.handler.ChatAppHandler
@@ -21,7 +22,6 @@ object Constant {
 }
 
 object SettingKeys {
-    val IS_GLOBAL_ENCRYPTION_MODE = booleanPreferencesKey("global_encryption_enabled")
     val CURRENT_KEY = stringPreferencesKey("current_key")
     // 用 String 类型的 Key 来存储序列化后的密钥数组
     val ALL_THE_KEYS = stringPreferencesKey("all_the_keys")
@@ -41,6 +41,11 @@ object SettingKeys {
     // 控制弹出发送图片or文件视图的双击最大间隔时间
     val SHOW_ATTACHMENT_VIEW_DOUBLE_CLICK_THRESHOLD = longPreferencesKey("show_attachment_view_double_click_threshold")
     val CUSTOM_APPS = stringPreferencesKey("custom_apps")
+    //  当前密文风格
+    val CIPHERTEXT_STYLE = stringPreferencesKey("ciphertext_style")
+    // 存储风格文本的最小和最大词语数
+    val CIPHERTEXT_STYLE_LENGTH_MIN = intPreferencesKey("ciphertext_style_length_min")
+    val CIPHERTEXT_STYLE_LENGTH_MAX = intPreferencesKey("ciphertext_style_length_max")
 }
 
 object CommonKeys {

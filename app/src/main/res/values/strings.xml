@@ -159,5 +159,12 @@
     <string name="scanner_help_dialog_instruction">点击即可选中，只有四种全部选择完才可以点击确认，之后就自动保存当前软件的节点信息用于加解密。可通过节点的具体内容确认是否是所需节点。</string>
     <string name="scanner_config_saved_toast">扫描配置已保存</string>
 
-<!--    密文风格相关-->
+    <!--    密文风格相关-->
+    <string name="cipher_style_title">密文语种</string>
+    <string name="cipher_style_description">加密后的文本可以选择不同风格！</string>
+    <string name="cipher_style_neko">猫娘语</string>
+    <string name="cipher_style_nier">尼尔语</string>
+    <string name="cipher_style_manbo">曼波语</string>
+    <string name="cipher_style_bangboo">邦布语</string>
+    <string name="cipher_style_Hilichurlian">丘丘语</string>
 </resources>

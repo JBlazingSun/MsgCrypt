@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.graphics.toColorInt
+import com.dianming.phoneapp.MyAccessibilityService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -33,13 +34,13 @@ import kotlinx.coroutines.withContext
 import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.CryptoMode
 import me.wjz.nekocrypt.R
-import com.dianming.phoneapp.MyAccessibilityService
 import me.wjz.nekocrypt.ui.component.DecryptionPopup
 import me.wjz.nekocrypt.ui.dialog.AttachmentPreviewState
 import me.wjz.nekocrypt.ui.dialog.AttachmentState
 import me.wjz.nekocrypt.ui.dialog.SendAttachmentDialog
 import me.wjz.nekocrypt.util.CryptoManager
 import me.wjz.nekocrypt.util.CryptoManager.appendNekoTalk
+import me.wjz.nekocrypt.util.CryptoManager.containsCiphertext
 import me.wjz.nekocrypt.util.CryptoUploader
 import me.wjz.nekocrypt.util.NCFileProtocol
 import me.wjz.nekocrypt.util.NCWindowManager
@@ -510,7 +511,8 @@ abstract class BaseChatAppHandler : ChatAppHandler {
             val originalText = inputNode?.text?.toString()
 
             // 2. 加密文本
-            val encryptedText = CryptoManager.encrypt(originalText!!, currentService.currentKey).appendNekoTalk()
+            val encryptedText =if(originalText!!.containsCiphertext()) originalText else
+                CryptoManager.encrypt(originalText, currentService.currentKey).appendNekoTalk()
 
             // 3. 调用核心发送函数
             setTextAndSend(encryptedText)
@@ -863,7 +865,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
         if(textToDecrypt == null)return null
         val currentService = service ?: return null
         // 1. 先判断是否真的包含“猫语”，避免不必要的计算
-        if (!CryptoManager.containsCiphertext(textToDecrypt)) {
+        if (!textToDecrypt.containsCiphertext()) {
             return null
         }
         Log.d(tag, "检测到密文: $textToDecrypt")

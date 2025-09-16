@@ -74,6 +74,7 @@ import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
 import me.wjz.nekocrypt.util.CryptoDownloader
 import me.wjz.nekocrypt.util.CryptoManager
 import me.wjz.nekocrypt.util.CryptoManager.appendNekoTalk
+import me.wjz.nekocrypt.util.CryptoManager.containsCiphertext
 import me.wjz.nekocrypt.util.NCFileProtocol
 import me.wjz.nekocrypt.util.getCacheFileFor
 import me.wjz.nekocrypt.util.getUriForFile
@@ -116,7 +117,7 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
         var ciphertextCharCount = 0
 
         // 先判断是不是密文
-        if (CryptoManager.containsCiphertext(inputText)) {
+        if (inputText.containsCiphertext()) {
             isEncryptMode = false
             ciphertextCharCount = inputText.length
             val decryptedText = CryptoManager.decrypt(inputText, secretKey)

@@ -1,5 +1,6 @@
 package me.wjz.nekocrypt.util
 
+import me.wjz.nekocrypt.R
 import java.io.InputStream
 import java.io.OutputStream
 import java.math.BigInteger
@@ -35,54 +36,6 @@ object CryptoManager {
         STEALTH_ALPHABET.withIndex().associate { (index, char) -> char to index }
 
 
-// --- 猫语短语库 (分类版) ---
-
-    /**
-     * 猫娘的内心活动，用括号包裹，显得很可爱。
-     */
-    private val NEKO_INNER_THOUGHTS = listOf(
-        "(探头)",
-        "(打哈欠)",
-        "(盯~)",
-        "(摇尾巴)",
-        "(伸懒腰)",
-        "(舔爪爪)",
-        "(歪头)",
-        "(耳朵动了动)",
-        "(用头蹭蹭)",
-        "(踩奶)",
-        "(缩成一团)"
-    )
-
-    /**
-     * 可爱的颜文字 (Kaomoji) 列表。
-     */
-    private val NEKO_KAOMOJI = listOf(
-        "ฅ●ω●ฅ",
-        "(>^ω^<)",
-        "(=´ω`=)",
-        "(/ω＼)",
-        "(´・ω・`)",
-        "(Ф∀Ф)",
-        "(๑•̀ㅂ•́)و✧"
-    )
-
-    /**
-     * 纯粹的猫咪叫声和拟声词。
-     */
-    private val NEKO_SOUNDS = listOf(
-        "喵~",
-        "喵呜！",
-        "嗷呜！",
-        "嗷呜~",
-        "咪~",
-        "喵！",
-        "喵？",
-        "呼噜噜...",
-        "咕噜咕噜~",
-        "蹭蹭~",
-        "喵喵~"
-    )
 
     /**
      * 生成一个符合 AES-256 要求的随机密钥。
@@ -93,60 +46,6 @@ object CryptoManager {
         val keyGenerator = KeyGenerator.getInstance(ALGORITHM)
         keyGenerator.init(KEY_SIZE_BITS)
         return keyGenerator.generateKey()
-    }
-
-
-    /**
-     * 为字符串追加一段结构化、有规则的可爱“猫咪话语”后缀。
-     *
-     * 生成规则：
-     * 1. 必须包含固定数量的【猫咪叫声】。
-     * 2. 随机包含 0-2 个不重复的【内心活动】，并保证它们不会出现在开头，且被【猫咪叫声】隔开。
-     * 3. 随机决定是否在末尾追加一个【颜文字】。
-     *
-     * @receiver 调用此函数的原始字符串。
-     * @return 附加了猫咪话语的新字符串。
-     */
-    fun String.appendNekoTalk(): String {
-        // --- 1. 决定本次生成的组件数量 ---
-        val soundCount = 2 // 写死包含2个叫声
-        val thoughtCount = Random.nextInt(0, 3) // 随机包含 0, 1, 或 2 个内心活动
-
-        // --- 2. 从库中随机挑选出本次要使用的具体短语 ---
-        val soundsToUse = (1..soundCount).map { NEKO_SOUNDS.random() }.toMutableList()
-        val thoughtsToUse = NEKO_INNER_THOUGHTS.shuffled().take(thoughtCount)
-
-
-        // --- 3. 核心逻辑：将【内心活动】插入到【叫声】的间隙中 ---
-        // 【关键修改】为了避免内心活动出现在开头，插入点从 1 开始 (即第一个叫声之后)。
-        // 这样就保证了第一个元素永远是“叫声”。
-        val availableSlots = (1..soundsToUse.size).toMutableList()
-        availableSlots.shuffle()
-
-        thoughtsToUse.forEach { thought ->
-            if (availableSlots.isNotEmpty()) {
-                val insertionIndex = availableSlots.removeAt(0)
-                soundsToUse.add(insertionIndex, thought)
-            }
-        }
-        val middleParts = soundsToUse
-
-
-        // --- 4. 构建最终的后缀字符串 ---
-        val fullNekoTalk = buildString {
-            middleParts.forEach { part ->
-                append(part)
-            }
-
-            // 【关键修改】随机决定是否在末尾追加颜文字 (这里设置为 60% 概率)。
-            if (Random.nextInt(1, 11) <= 6) {
-                val kaomojiToEnd = NEKO_KAOMOJI.random()
-                append(kaomojiToEnd)
-            }
-        }
-
-        val middleIndex = fullNekoTalk.length / 2
-        return fullNekoTalk.substring(0, middleIndex) + this + fullNekoTalk.substring(middleIndex)
     }
 
     /**
@@ -311,4 +210,95 @@ object CryptoManager {
             throw SecurityException("解密失败，数据可能被篡改或密钥错误", e)
         }
     }
+
+    /**
+     * 为字符串追加一段结构化、有规则的可爱“猫咪话语”后缀。
+     *
+     * 生成规则：
+     * 1. 必须包含固定数量的【猫咪叫声】。
+     * 2. 随机包含 0-2 个不重复的【内心活动】，并保证它们不会出现在开头，且被【猫咪叫声】隔开。
+     * 3. 随机决定是否在末尾追加一个【颜文字】。
+     *
+     * @receiver 调用此函数的原始字符串。
+     * @return 附加了猫咪话语的新字符串。
+     */
+    fun String.appendNekoTalk(): String {
+        // --- 1. 决定本次生成的组件数量 ---
+        val soundCount = 2 // 写死包含2个叫声
+        val thoughtCount = Random.nextInt(0, 3) // 随机包含 0, 1, 或 2 个内心活动
+
+        // --- 2. 从库中随机挑选出本次要使用的具体短语 ---
+        val soundsToUse = (1..soundCount).map { NEKO_SOUNDS.random() }.toMutableList()
+        val thoughtsToUse = NEKO_INNER_THOUGHTS.shuffled().take(thoughtCount)
+
+
+        // --- 3. 核心逻辑：将【内心活动】插入到【叫声】的间隙中 ---
+        // 【关键修改】为了避免内心活动出现在开头，插入点从 1 开始 (即第一个叫声之后)。
+        // 这样就保证了第一个元素永远是“叫声”。
+        val availableSlots = (1..soundsToUse.size).toMutableList()
+        availableSlots.shuffle()
+
+        thoughtsToUse.forEach { thought ->
+            if (availableSlots.isNotEmpty()) {
+                val insertionIndex = availableSlots.removeAt(0)
+                soundsToUse.add(insertionIndex, thought)
+            }
+        }
+        val middleParts = soundsToUse
+
+
+        // --- 4. 构建最终的后缀字符串 ---
+        val fullNekoTalk = buildString {
+            middleParts.forEach { part ->
+                append(part)
+            }
+
+            // 【关键修改】随机决定是否在末尾追加颜文字 (这里设置为 60% 概率)。
+            if (Random.nextInt(1, 11) <= 6) {
+                val kaomojiToEnd = NEKO_KAOMOJI.random()
+                append(kaomojiToEnd)
+            }
+        }
+
+        val middleIndex = fullNekoTalk.length / 2
+        return fullNekoTalk.substring(0, middleIndex) + this + fullNekoTalk.substring(middleIndex)
+    }
+
+//    styles: {
+//        Bangboo: {//邦布语
+//            length: [2, 5],
+//            content: ['嗯呢...', '哇哒！', '嗯呢！', '嗯呢哒！', '嗯呐呐！', '嗯哒！', '嗯呢呢！']
+//        },
+//        Hilichurl: {//丘丘语
+//            length: [2, 5],
+//            content: ['Muhe ye!', 'Ye dada!', 'Ya yika!', 'Biat ye！', 'Dala si？', 'Yaya ika！', 'Mi? Dada!', 'ye pupu!', 'gusha dada!']
+//        },
+//        Nier: {//Nier: AutoMata，尼尔语, is that the price I'm paying for my past mistakes?
+//            length: [5, 8],
+//            content: [
+//            "Ee ", "ser ", "les ", "hii ", "san ", "mia ", "ni ", "Escalei ", "lu ", "push ", "to ", "lei ",
+//            "Schmosh ", "juna ", "wu ", "ria ", "e ", "je ", "cho ", "no ",
+//            "Nasico ", "whosh ", "pier ", "wa ", "nei ", "Wananba ", "he ", "na ", "qua ", "lei ",
+//            "Sila ", "schmer ", "ya ", "pi ", "pa ", "lu ", "Un ", "schen ", "ta ", "tii ", "pia ", "pa ", "ke ", "lo "
+//            ]
+//        },
+//        Neko: {//猫娘语
+//            length: [3, 5],
+//            content: ["嗷呜!", "咕噜~", "喵~", "喵咕~", "喵喵~", "喵?", "喵喵！", "哈！", "喵呜...", "咪咪喵！", "咕咪?"]
+//        },
+//        Doggo: { // 小狗语
+//            length: [2, 5],
+//            content: ["汪汪！", "汪呜~", "嗷呜~", "呜汪？", "汪汪呜！", "汪呜呜~", "嗷嗷！"]
+//        },
+//
+//        Birdie: { // 小鸟语
+//            length: [2, 5],
+//            content: ["啾啾~", "咕咕！", "叽叽~", "啾啾啾！", "叽咕？", "啾啾？", "咕啾~"]
+//        },
+//
+//    },
+}
+
+enum class CiphertextStyleType(val displayNameResId:Int,content:List<String>){
+
 }

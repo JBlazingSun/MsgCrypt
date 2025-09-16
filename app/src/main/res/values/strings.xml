@@ -158,4 +158,6 @@
     <string name="scanner_help_dialog_intro">必须选择正确的输入框、发送按钮、消息列表、消息节点。</string>
     <string name="scanner_help_dialog_instruction">点击即可选中，只有四种全部选择完才可以点击确认，之后就自动保存当前软件的节点信息用于加解密。可通过节点的具体内容确认是否是所需节点。</string>
     <string name="scanner_config_saved_toast">扫描配置已保存</string>
+
+<!--    密文风格相关-->
 </resources>

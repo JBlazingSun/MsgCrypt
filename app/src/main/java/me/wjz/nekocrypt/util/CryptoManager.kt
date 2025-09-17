@@ -1,7 +1,15 @@
 package me.wjz.nekocrypt.util
 
 import android.R.id.input
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import me.wjz.nekocrypt.Constant
+import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
+import me.wjz.nekocrypt.SettingKeys
+import me.wjz.nekocrypt.data.DataStoreManager
+import me.wjz.nekocrypt.hook.observeAsState
 import java.io.InputStream
 import java.io.OutputStream
 import java.math.BigInteger
@@ -13,12 +21,20 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.getValue
 import kotlin.random.Random
 
 /**
  * 加密工具类，有相关的加密算法。
  */
 object CryptoManager {
+    val dataStoreManager: DataStoreManager by lazy { NekoCryptApp.instance.dataStoreManager }
+    val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    //  当前使用的密文语种
+    val ciphertextStyleType by scope.observeAsState(flowProvider = {
+        dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE, CiphertextStyleType.NEKO.toString())
+    },initialValue = CiphertextStyleType.NEKO.toString())
 
     private const val ALGORITHM = "AES"
     const val TRANSFORMATION = "AES/GCM/NoPadding"

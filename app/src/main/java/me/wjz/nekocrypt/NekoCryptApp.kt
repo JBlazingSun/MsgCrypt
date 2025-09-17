@@ -24,7 +24,7 @@ class NekoCryptApp : Application() {
     companion object {
         const val SERVICE_CHANNEL_ID = "NekoCryptServiceChannel"
         const val TAG = "NekoCrypt"
-        lateinit var instance: Application private set
+        lateinit var instance: NekoCryptApp private set
     }
 
     private fun createNotificationChannel() {

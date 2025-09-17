@@ -1,10 +1,8 @@
 package me.wjz.nekocrypt.util
 
-import android.R.id.input
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import me.wjz.nekocrypt.Constant
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys
@@ -15,13 +13,13 @@ import java.io.OutputStream
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.Locale.getDefault
 import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.getValue
 import kotlin.random.Random
 
 /**
@@ -57,10 +55,7 @@ object CryptoManager {
      * 为了高效解码，预先创建一个从“猫语”字符到其在字母表中索引位置的映射。
      * 这是一个关键的性能优化。
      */
-    private val STEALTH_CHAR_TO_INDEX_MAP =
-        STEALTH_ALPHABET.withIndex().associate { (index, char) -> char to index }
-
-
+    private val STEALTH_CHAR_TO_INDEX_MAP = STEALTH_ALPHABET.withIndex().associate { (index, char) -> char to index }
 
     /**
      * 生成一个符合 AES-256 要求的随机密钥。
@@ -237,61 +232,35 @@ object CryptoManager {
     }
 
     /**
-     * 为字符串追加一段结构化、有规则的可爱“猫咪话语”后缀。
+     * ✨ 全新：根据用户设置，为密文应用伪装文本样式。
      *
-     * 生成规则：
-     * 1. 必须包含固定数量的【猫咪叫声】。
-     * 2. 随机包含 0-2 个不重复的【内心活动】，并保证它们不会出现在开头，且被【猫咪叫声】隔开。
-     * 3. 随机决定是否在末尾追加一个【颜文字】。
-     *
-     * @receiver 调用此函数的原始字符串。
-     * @return 附加了猫咪话语的新字符串。
+     * @return 伪装后的、包含随机语言和真实密文的最终字符串。
      */
-    fun String.appendNekoTalk(): String {
-        // --- 1. 决定本次生成的组件数量 ---
-        val soundCount = 2 // 写死包含2个叫声
-        val thoughtCount = Random.nextInt(0, 3) // 随机包含 0, 1, 或 2 个内心活动
+    fun String.applyCiphertextStyle(): String {
+        // 拿到对应枚举类
+        val styleType: CiphertextStyleType = CiphertextStyleType.fromName(ciphertextStyleType)
+        // 3. 获取该风格下的所有可用词组
+        val content = styleType.content
+        //  管理最大最小值
+        val finalMin = minOf(ciphertextStyleLengthMin, ciphertextStyleLengthMax)
+        val finalMax = maxOf(ciphertextStyleLengthMin, ciphertextStyleLengthMax)
+        // 如果 finalMin 和 finalMax 相等，直接取这个值，否则在范围内取随机数
+        val count = if (finalMin == finalMax) finalMin else Random.nextInt(finalMin, finalMax + 1)
 
-        // --- 2. 从库中随机挑选出本次要使用的具体短语 ---
-        val soundsToUse = (1..soundCount).map { NEKO_SOUNDS.random() }.toMutableList()
-        val thoughtsToUse = NEKO_INNER_THOUGHTS.shuffled().take(thoughtCount)
-
-
-        // --- 3. 核心逻辑：将【内心活动】插入到【叫声】的间隙中 ---
-        // 【关键修改】为了避免内心活动出现在开头，插入点从 1 开始 (即第一个叫声之后)。
-        // 这样就保证了第一个元素永远是“叫声”。
-        val availableSlots = (1..soundsToUse.size).toMutableList()
-        availableSlots.shuffle()
-
-        thoughtsToUse.forEach { thought ->
-            if (availableSlots.isNotEmpty()) {
-                val insertionIndex = availableSlots.removeAt(0)
-                soundsToUse.add(insertionIndex, thought)
-            }
-        }
-        val middleParts = soundsToUse
-
-
-        // --- 4. 构建最终的后缀字符串 ---
-        val fullNekoTalk = buildString {
-            middleParts.forEach { part ->
-                append(part)
-            }
-
-            // 【关键修改】随机决定是否在末尾追加颜文字 (这里设置为 60% 概率)。
-            if (Random.nextInt(1, 11) <= 6) {
-                val kaomojiToEnd = NEKO_KAOMOJI.random()
-                append(kaomojiToEnd)
+        // 5. 随机挑选词组并拼接成伪装文本
+        val decorativeText = buildString {
+            repeat(count) {
+                append(content.random())
             }
         }
 
-        val middleIndex = fullNekoTalk.length / 2
-        return fullNekoTalk.substring(0, middleIndex) + this + fullNekoTalk.substring(middleIndex)
+        val middleIndex = decorativeText.length / 2
+        return decorativeText.substring(0, middleIndex) + this + decorativeText.substring(middleIndex)
     }
 
 }
 
-enum class CiphertextStyleType(val displayNameResId:Int,content:List<String>){
+enum class CiphertextStyleType(val displayNameResId:Int,val content:List<String>){
     NEKO(
         displayNameResId = R.string.cipher_style_neko,  // 猫娘语
         content = listOf("嗷呜!", "咕噜~", "喵~", "喵咕~", "喵喵~", "喵?", "喵喵！", "哈！", "喵呜...", "咪咪喵！", "咕咪?")
@@ -316,5 +285,11 @@ enum class CiphertextStyleType(val displayNameResId:Int,content:List<String>){
     MANBO(
         displayNameResId = R.string.cipher_style_manbo, //  曼波！
         content = listOf("曼波~","哈吉米~","哈吉米咩那咩路多~","曼波!","曼波...","欧码叽哩，曼波！","叮咚鸡！","哈压库！","哈压库~","哈吉米！","哦耶~","duang~")
-    )
+    );
+    companion object{
+        //  辅助函数
+        fun fromName(name:String): CiphertextStyleType{
+            return entries.find { it.name == name.uppercase(getDefault()) } ?:NEKO
+        }
+    }
 }

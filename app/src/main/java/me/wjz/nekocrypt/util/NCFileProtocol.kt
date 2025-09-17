@@ -4,7 +4,7 @@ import android.util.Log
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import me.wjz.nekocrypt.util.CryptoManager.appendNekoTalk
+import me.wjz.nekocrypt.util.CryptoManager.applyCiphertextStyle
 import org.json.JSONException
 
 enum class NCFileType{
@@ -53,6 +53,6 @@ data class NCFileProtocol(
         Log.d("NekoAccessibility", "protocol本身结果结果：$this")
         val payloadJson = Json.encodeToString(this)
         Log.d("NekoAccessibility", "protocol转json结果：$payloadJson")
-        return CryptoManager.encrypt(NC_FILE_PROTOCOL_PREFIX + payloadJson, encryptionKey).appendNekoTalk()
+        return CryptoManager.encrypt(NC_FILE_PROTOCOL_PREFIX + payloadJson, encryptionKey).applyCiphertextStyle()
     }
 }

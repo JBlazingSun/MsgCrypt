@@ -73,7 +73,7 @@ import me.wjz.nekocrypt.ui.dialog.FilePreviewDialog
 import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
 import me.wjz.nekocrypt.util.CryptoDownloader
 import me.wjz.nekocrypt.util.CryptoManager
-import me.wjz.nekocrypt.util.CryptoManager.appendNekoTalk
+import me.wjz.nekocrypt.util.CryptoManager.applyCiphertextStyle
 import me.wjz.nekocrypt.util.CryptoManager.containsCiphertext
 import me.wjz.nekocrypt.util.NCFileProtocol
 import me.wjz.nekocrypt.util.getCacheFileFor
@@ -150,7 +150,7 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
             // --- 是原文，执行加密 ---
             isEncryptMode = true
             fileInfoToShow = null
-            val ciphertext = CryptoManager.encrypt(inputText, secretKey).appendNekoTalk()
+            val ciphertext = CryptoManager.encrypt(inputText, secretKey).applyCiphertextStyle()
             ciphertextCharCount = ciphertext.length
             outputText = ciphertext
         }

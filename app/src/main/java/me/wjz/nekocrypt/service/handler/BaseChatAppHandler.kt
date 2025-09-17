@@ -39,7 +39,7 @@ import me.wjz.nekocrypt.ui.dialog.AttachmentPreviewState
 import me.wjz.nekocrypt.ui.dialog.AttachmentState
 import me.wjz.nekocrypt.ui.dialog.SendAttachmentDialog
 import me.wjz.nekocrypt.util.CryptoManager
-import me.wjz.nekocrypt.util.CryptoManager.appendNekoTalk
+import me.wjz.nekocrypt.util.CryptoManager.applyCiphertextStyle
 import me.wjz.nekocrypt.util.CryptoManager.containsCiphertext
 import me.wjz.nekocrypt.util.CryptoUploader
 import me.wjz.nekocrypt.util.NCFileProtocol
@@ -512,7 +512,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
 
             // 2. 加密文本
             val encryptedText =if(originalText!!.containsCiphertext()) originalText else
-                CryptoManager.encrypt(originalText, currentService.currentKey).appendNekoTalk()
+                CryptoManager.encrypt(originalText, currentService.currentKey).applyCiphertextStyle()
 
             // 3. 调用核心发送函数
             setTextAndSend(encryptedText)

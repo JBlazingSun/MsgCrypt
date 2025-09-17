@@ -32,9 +32,17 @@ object CryptoManager {
     val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     //  当前使用的密文语种
-    val ciphertextStyleType by scope.observeAsState(flowProvider = {
+    val ciphertextStyleType: String by scope.observeAsState(flowProvider = {
         dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE, CiphertextStyleType.NEKO.toString())
     },initialValue = CiphertextStyleType.NEKO.toString())
+    //  密文长度词组最小值
+    val ciphertextStyleLengthMin by scope.observeAsState(flowProvider = {
+        dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE_LENGTH_MIN, 1)
+    },initialValue = 1)
+    //  密文长度词组最大值
+    val ciphertextStyleLengthMax by scope.observeAsState(flowProvider = {
+        dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE_LENGTH_MAX, 1)
+    },initialValue = 1)
 
     private const val ALGORITHM = "AES"
     const val TRANSFORMATION = "AES/GCM/NoPadding"

@@ -76,7 +76,7 @@ class ScannerDialogActivity: ComponentActivity() {
         } else {
             // 对于旧版本，使用传统的方法
             @Suppress("DEPRECATION") // 告诉编译器，我们知道这个方法过时了，但为了兼容性还是要用
-            intent.getParcelableExtra(SCAN_RESULT)
+            intent.getParcelableExtra<ScanResult>(SCAN_RESULT)  //  这里保留一下类型指定？看日志似乎是类型不确定导致的崩溃
         }
 
         if(scanResult == null){

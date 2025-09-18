@@ -36,6 +36,10 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -67,11 +71,13 @@ import kotlinx.coroutines.withContext
 import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
+import me.wjz.nekocrypt.SettingKeys.CIPHERTEXT_STYLE
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
 import me.wjz.nekocrypt.data.rememberKeyArrayState
 import me.wjz.nekocrypt.hook.rememberDataStoreState
 import me.wjz.nekocrypt.ui.dialog.FilePreviewDialog
 import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
+import me.wjz.nekocrypt.util.CiphertextStyleType
 import me.wjz.nekocrypt.util.CryptoDownloader
 import me.wjz.nekocrypt.util.CryptoManager
 import me.wjz.nekocrypt.util.CryptoManager.applyCiphertextStyle
@@ -92,6 +98,10 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
     val secretKey: String by rememberDataStoreState(CURRENT_KEY, DEFAULT_SECRET_KEY)
     //  这里还要拿密钥列表，for循环遍历解密
     val secretKeyList by rememberKeyArrayState()
+
+    //  当前的密文风格类型
+    var ciphertextStyleType by rememberDataStoreState(CIPHERTEXT_STYLE, CiphertextStyleType.NEKO.toString())
+
     val decryptFailed = stringResource(id = R.string.crypto_decrypt_fail)//解密错误的text。
     var isDecryptFailed by remember { mutableStateOf(false) }
     // 新增：用于统计的状态
@@ -180,6 +190,16 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
             onClick = {
                 // 当点击时，将状态设置为true，以显示对话框
                 showKeyDialog = true
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        CiphertextStyleSelector(
+            selectedStyle = currentStyle,
+            onStyleSelected = { newStyle ->
+                // ✨ 核心修正：直接赋值即可！
+                // 我们的 DataStoreStateDelegate 会自动处理保存逻辑和UI更新。
+                ciphertextStyleType = newStyle
             }
         )
 
@@ -528,4 +548,52 @@ private suspend fun saveImageToGallery(context: Context,uri: Uri, fileInfo: NCFi
     if (success) Toast.makeText(context,context.getString(R.string.image_saved_to_gallery_success),Toast.LENGTH_SHORT).show()
     else Toast.makeText(context,context.getString(R.string.image_saved_to_gallery_failed),Toast.LENGTH_SHORT).show()
     return success
+}
+
+/**
+ * ✨ 全新：一个用于选择密文伪装风格的下拉菜单组件
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CiphertextStyleSelector(
+    selectedStyle: CiphertextStyleType,
+    onStyleSelected: (CiphertextStyleType) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    // 从枚举中获取所有可选的样式
+    val styles = remember { CiphertextStyleType.entries }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = stringResource(id = selectedStyle.displayNameResId),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.crypto_style_selector_label)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor() //  这是让下拉菜单能正确定位到输入框的关键！
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+        )
+        // 真正的下拉菜单
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            styles.forEach { style ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(id = style.displayNameResId)) },
+                    onClick = {
+                        onStyleSelected(style)
+                        expanded = false // 选择后收起菜单
+                    }
+                )
+            }
+        }
+    }
 }

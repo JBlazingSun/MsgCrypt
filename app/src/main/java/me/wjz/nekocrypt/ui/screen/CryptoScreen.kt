@@ -68,6 +68,7 @@ import me.wjz.nekocrypt.Constant.DEFAULT_SECRET_KEY
 import me.wjz.nekocrypt.NekoCryptApp
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys.CURRENT_KEY
+import me.wjz.nekocrypt.data.rememberKeyArrayState
 import me.wjz.nekocrypt.hook.rememberDataStoreState
 import me.wjz.nekocrypt.ui.dialog.FilePreviewDialog
 import me.wjz.nekocrypt.ui.dialog.KeyManagementDialog
@@ -87,8 +88,10 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var isEncryptMode by remember { mutableStateOf(true) }//当前是加密or解密
-    //获取当前密钥，没有就是默认密钥
+    //  获取当前密钥，用于加密。没有就是默认密钥
     val secretKey: String by rememberDataStoreState(CURRENT_KEY, DEFAULT_SECRET_KEY)
+    //  这里还要拿密钥列表，for循环遍历解密
+    val secretKeyList by rememberKeyArrayState()
     val decryptFailed = stringResource(id = R.string.crypto_decrypt_fail)//解密错误的text。
     var isDecryptFailed by remember { mutableStateOf(false) }
     // 新增：用于统计的状态
@@ -120,7 +123,12 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
         if (inputText.containsCiphertext()) {
             isEncryptMode = false
             ciphertextCharCount = inputText.length
-            val decryptedText = CryptoManager.decrypt(inputText, secretKey)
+            var decryptedText:String? = null
+            //  执行解密
+            for( key in secretKeyList){
+                decryptedText = CryptoManager.decrypt(inputText, key)
+                if(decryptedText!=null) break
+            }
 
             // 再判断解密后的内容是不是文件协议
             val fileInfo = decryptedText?.let { NCFileProtocol.fromString(it) }

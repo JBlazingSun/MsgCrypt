@@ -35,11 +35,11 @@ object CryptoManager {
     },initialValue = CiphertextStyleType.NEKO.toString())
     //  密文长度词组最小值
     val ciphertextStyleLengthMin by scope.observeAsState(flowProvider = {
-        dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE_LENGTH_MIN, 1)
+        dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE_LENGTH_MIN, 3)
     },initialValue = 1)
     //  密文长度词组最大值
     val ciphertextStyleLengthMax by scope.observeAsState(flowProvider = {
-        dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE_LENGTH_MAX, 1)
+        dataStoreManager.getSettingFlow(SettingKeys.CIPHERTEXT_STYLE_LENGTH_MAX, 7)
     },initialValue = 1)
 
     private const val ALGORITHM = "AES"

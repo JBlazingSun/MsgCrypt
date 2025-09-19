@@ -35,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
@@ -66,6 +67,7 @@ import androidx.datastore.preferences.core.Preferences
 import kotlinx.coroutines.launch
 import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.hook.rememberDataStoreState
+import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 /**
@@ -605,4 +607,77 @@ private fun ColorPickerDialog(
             }
         }
     )
+}
+
+
+/**
+ * ✨ 全新：一个用于选择一个数值区间的设置项组件
+ */
+@Composable
+fun RangeSliderSettingItem(
+    minKey: Preferences.Key<Int>,
+    maxKey: Preferences.Key<Int>,
+    defaultMin: Int,
+    defaultMax: Int,
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    valueRange: IntRange,
+    step: Int,
+    modifier: Modifier = Modifier,
+) {
+    // 使用 Hook 分别管理最小值和最大值的状态
+    var currentMin by rememberDataStoreState(minKey, defaultMin)
+    var currentMax by rememberDataStoreState(maxKey, defaultMax)
+
+    // RangeSlider 需要一个 Range 类型的 state，我们在这里组合一下
+    val currentRange by remember(currentMin, currentMax) {
+        mutableStateOf(currentMin.toFloat()..currentMax.toFloat())
+    }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.padding(end = 16.dp)) { icon() }
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    // 实时显示当前选中的范围
+                    Text(
+                        text = "$currentMin - $currentMax",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                RangeSlider(
+                    value = currentRange,
+                    onValueChange = { newRange ->
+                        // 当用户滑动时，我们只更新本地的 state 以提供实时反馈
+                        // 注意：这里我们不直接写入 DataStore，避免过于频繁的IO操作
+                        currentMin = newRange.start.roundToInt()
+                        currentMax = newRange.endInclusive.roundToInt()
+                    },
+                    // ✨ 当用户滑动结束后，才把最终确定的值写入 DataStore
+                    onValueChangeFinished = {
+                        // 因为我们的 by rememberDataStoreState 委托会自动保存，
+                        // 所以这里实际上是触发了最终的赋值操作，从而写入
+                    },
+                    valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
+                    // 计算步数，(10-1)/1 = 9个档位，所以是8个间隔
+                    steps = ((valueRange.last - valueRange.first) / step) - 1,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
 }

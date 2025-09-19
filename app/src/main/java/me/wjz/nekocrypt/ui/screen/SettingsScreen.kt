@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DividerDefaults
@@ -42,6 +43,7 @@ import me.wjz.nekocrypt.R
 import me.wjz.nekocrypt.SettingKeys
 import me.wjz.nekocrypt.ui.ClickableSettingItem
 import me.wjz.nekocrypt.ui.ColorSettingItem
+import me.wjz.nekocrypt.ui.RangeSliderSettingItem
 import me.wjz.nekocrypt.ui.SettingsHeader
 import me.wjz.nekocrypt.ui.SliderSettingItem
 import java.io.BufferedReader
@@ -95,6 +97,27 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 subtitle = stringResource(R.string.decryption_window_show_time_desc),
                 valueRange = 500L..3000L,
                 step = 250L // 单步步长
+            )
+        }
+        item {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
+            )
+        }
+        item {
+            // 区间选择器
+            RangeSliderSettingItem(
+                minKey = SettingKeys.CIPHERTEXT_STYLE_LENGTH_MIN,
+                maxKey = SettingKeys.CIPHERTEXT_STYLE_LENGTH_MAX,
+                defaultMin = 3,
+                defaultMax = 7,
+                icon = { Icon(Icons.Outlined.GraphicEq, contentDescription = "Ciphertext Length") },
+                title = stringResource(R.string.ciphertext_length_title),
+                subtitle = stringResource(R.string.ciphertext_length_subtitle),
+                valueRange = 1..10,
+                step = 1
             )
         }
         item {

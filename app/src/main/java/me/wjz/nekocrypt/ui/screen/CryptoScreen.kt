@@ -195,15 +195,15 @@ fun CryptoScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
 
         CiphertextStyleSelector(
-            selectedStyle = currentStyle,
+            selectedStyle = CiphertextStyleType.fromName(ciphertextStyleType),
             onStyleSelected = { newStyle ->
                 // ✨ 核心修正：直接赋值即可！
                 // 我们的 DataStoreStateDelegate 会自动处理保存逻辑和UI更新。
-                ciphertextStyleType = newStyle
+                ciphertextStyleType = newStyle.toString()
             }
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // 2. 输入文本框
         OutlinedTextField(

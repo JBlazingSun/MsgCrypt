@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -129,9 +132,30 @@ fun KeyScreen(modifier: Modifier = Modifier) {
             }
         }
         // 说明文本
-        item{
-            Text(modifier= Modifier.padding(6.dp),
-                text = "测试阿迪斯发的说法是")
+        item {
+          Row(
+              modifier=Modifier.fillMaxWidth()
+                  .padding(horizontal = 8.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f))
+                  .padding(horizontal = 12.dp, vertical = 8.dp), // 设置内边距
+              verticalAlignment = Alignment.CenterVertically
+          ){
+              // 左侧的小图标
+              Icon(
+                  imageVector = Icons.Default.Info,
+                  contentDescription = null, // 图标是纯装饰性的
+                  tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                  modifier = Modifier.size(18.dp)
+              )
+              Spacer(modifier = Modifier.width(8.dp))
+              // 右侧的说明文字
+              Text(
+                  text = stringResource(R.string.key_screen_supported_app_description),
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onTertiaryContainer
+              )
+          }
         }
         // 自定义应用
         item {

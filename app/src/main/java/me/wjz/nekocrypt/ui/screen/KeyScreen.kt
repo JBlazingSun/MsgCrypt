@@ -128,6 +128,11 @@ fun KeyScreen(modifier: Modifier = Modifier) {
                 }
             }
         }
+        // 说明文本
+        item{
+            Text(modifier= Modifier.padding(6.dp),
+                text = "测试阿迪斯发的说法是")
+        }
         // 自定义应用
         item {
             SettingsHeader(stringResource(R.string.key_screen_custom_app))

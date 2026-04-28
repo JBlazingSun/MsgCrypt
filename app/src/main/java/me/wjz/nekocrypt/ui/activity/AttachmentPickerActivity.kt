@@ -2,6 +2,7 @@ package me.wjz.nekocrypt.ui.activity
 
 import android.content.Intent
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
@@ -44,46 +45,33 @@ class AttachmentPickerActivity : ComponentActivity() {
          */
         val onResult = { uri: Uri? ->
             if (uri != null) {
-                // 当拿到结果时，在IO线程中复制一份文件，然后发回我们复制出来的文件的uri。
-//                lifecycleScope.launch(Dispatchers.IO) {
-//                    try {
-//                        val newCacheUri = copyFileToCache(uri)
-//                        ResultRelay.send(newCacheUri)
-//                        Log.d(tag, "已发送缓存文件的Uri：$newCacheUri")
-//                    } catch (e: Exception) {
-//                        Log.e(tag, "复制文件到缓存失败", e)
-//                        // 确保UI操作在主线程
-//                        withContext(Dispatchers.Main) {
-//                            Toast.makeText(
-//                                this@AttachmentPickerActivity,
-//                                getString(R.string.crypto_attachment_file_not_accessible),
-//                                Toast.LENGTH_SHORT
-//                            ).show()
-//                        }
-//                    } finally {
-//                        // 无论成功或失败，最后都关闭Activity
-//                        withContext(Dispatchers.Main) {
-//                            finish()
-//                        }
-//                    }
-//                }
+                val pickType = intent.getStringExtra(EXTRA_PICK_TYPE)
 
                 lifecycleScope.launch {
                     try {
-                        // 在拿到Uri后，立刻申请持久化读取权限
-                        val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        contentResolver.takePersistableUriPermission(uri, takeFlags)
-                        Log.d(tag, "已成功获取持久化权限: $uri")
-                        // 将这个现在拥有持久权限的Uri发送出去
-                        ResultRelay.send(uri)
-
+                        if (pickType == TYPE_MEDIA) {
+                            // PickVisualMedia 的 URI 不支持持久化权限，必须先复制到缓存
+                            val cacheUri = copyFileToCache(uri)
+                            ResultRelay.send(cacheUri)
+                            Log.d(tag, "相册文件已复制到缓存: $cacheUri")
+                        } else {
+                            // GetContent 支持 takePersistableUriPermission
+                            val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            contentResolver.takePersistableUriPermission(uri, takeFlags)
+                            Log.d(tag, "已成功获取持久化权限: $uri")
+                            ResultRelay.send(uri)
+                        }
                     } catch (e: SecurityException) {
-                        Log.e(tag, "申请持久化权限失败，硬发Uri", e)
-                        ResultRelay.send(uri)
+                        Log.e(tag, "申请持久化权限失败，回退到缓存复制", e)
+                        try {
+                            val cacheUri = copyFileToCache(uri)
+                            ResultRelay.send(cacheUri)
+                        } catch (ioe: IOException) {
+                            Log.e(tag, "复制文件到缓存也失败", ioe)
+                        }
+                    } catch (e: IOException) {
+                        Log.e(tag, "复制文件到缓存失败", e)
                     } finally {
-                        // ✨ 关键修复：在关闭Activity前增加一个微小的延迟
-                        // 这给了系统足够的时间来处理持久化权限的授予，
-                        // 防止在Service尝试访问Uri之前，权限就因Activity销毁而失效。
                         delay(200)
                         finish()
                     }
@@ -133,9 +121,20 @@ class AttachmentPickerActivity : ComponentActivity() {
         val inputStream = contentResolver.openInputStream(sourceUri)
             ?: throw IOException("无法为所选文件打开输入流。")
 
-        // 在我们的缓存目录里创建一个唯一的文件名
-        val fileName = "upload_cache_${System.currentTimeMillis()}"
-        val tempFile = File(cacheDir, fileName)
+        // 尝试获取原始文件名，保留扩展名以便后续 getFileName 识别
+        val originalName = contentResolver.query(sourceUri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val col = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (col != -1) cursor.getString(col) else null
+            } else null
+        }
+        val cacheName = if (originalName != null) {
+            // 保留原始文件名，加时间戳前缀防冲突
+            "${System.currentTimeMillis()}_$originalName"
+        } else {
+            "upload_cache_${System.currentTimeMillis()}"
+        }
+        val tempFile = File(cacheDir, cacheName)
 
         // 使用Kotlin的扩展函数，安全地将输入流复制到输出流，并自动关闭它们
         inputStream.use { input ->

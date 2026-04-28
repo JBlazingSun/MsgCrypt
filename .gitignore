@@ -37,4 +37,4 @@ google-services.json
 app/release/output-metadata.json
 app/src/main/java/me/wjz/nekocrypt/test/
 app/release
-.test
+test

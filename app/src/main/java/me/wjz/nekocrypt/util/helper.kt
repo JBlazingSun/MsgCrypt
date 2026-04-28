@@ -45,6 +45,11 @@ fun getFileSize(uri: Uri): Long {
  * 获取文件名
  */
 fun getFileName(uri: Uri): String {
+    // file:// URI 直接从路径取文件名
+    if (uri.scheme == "file") {
+        val name = uri.lastPathSegment
+        if (!name.isNullOrBlank()) return name
+    }
     var fileName = "unknown"
     NekoCryptApp.instance.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
         if (cursor.moveToFirst()) {

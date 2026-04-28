@@ -84,7 +84,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     // 为 RecyclerView/ListView 创建一个专属的缓存
     private var cachedMessageListNode: AccessibilityNodeInfo? = null
 
-    // 为沉浸式解密创建一个“防抖”任务，避免过于频繁的扫描
+    // 为沉浸式解密创建一个"防抖"任务，避免过于频繁的扫描
     private var immersiveDecryptionJob: Job? = null
 
     // Key: 一个消息气泡的唯一标识符 (位置 + 文本哈希)
@@ -159,8 +159,10 @@ abstract class BaseChatAppHandler : ChatAppHandler {
 
         filePickerJob = service.serviceScope.launch {
             ResultRelay.flow.collectLatest { uri ->
-                // 当收到“代办”发回的URI时
+                // 当收到"代办"发回的URI时
                 Log.d(tag, "收到文件URI: $uri")
+                // 消费掉，防止 replay 导致重复处理
+                ResultRelay.consumeLast()
                 showAttachmentDialog()
                 startUpload(uri)
             }
@@ -261,7 +263,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                     immersiveDecryptionCache[cacheKey]?.let { manager ->
                         updateTasks.add(manager to nodeBounds)
                     } ?: run {
-                        // 如果弹窗不存在，则加入“创建弹窗”任务列表
+                        // 如果弹窗不存在，则加入"创建弹窗"任务列表
                         creationTasks.add(Triple(decryptedText, node, cacheKey))
                     }
                 }
@@ -294,7 +296,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                     creationTasks.forEach { (decryptedText, node, cacheKey) ->
                         if (!isActive) return@forEach
 
-                        // ✨ [正确逻辑] 1. 调用通用函数，并传入“从缓存移除自己”的正确回调
+                        // ✨ [正确逻辑] 1. 调用通用函数，并传入"从缓存移除自己"的正确回调
                         val popupManager = showDecryptionPopup(
                             decryptedText = decryptedText,
                             anchorNode = node,
@@ -341,7 +343,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
             },
             anchorRect = anchorRect
         ) {
-            // ✨ 使用 CompositionLocalProvider 将 fileActionHandler 的 show 方法放入“魔法通道”
+            // ✨ 使用 CompositionLocalProvider 将 fileActionHandler 的 show 方法放入"魔法通道"
             CompositionLocalProvider(
                 LocalFileActionHandler provides { fileInfo -> FileActionHandler(service!!).show(fileInfo) }
             ) {
@@ -417,8 +419,8 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                 overlayView = View(currentService).apply {
                     setBackgroundColor(currentService.sendBtnOverlayColor.toColorInt())
 
-                    // ✨ 1. 首先，为视图定义一个标准的“单击”行为
-                    // 这就是我们的“标准门铃按钮”。
+                    // ✨ 1. 首先，为视图定义一个标准的"单击"行为
+                    // 这就是我们的"标准门铃按钮"。
                     setOnClickListener {
                         // 标准模式下，短按执行普通发送
                         if (currentService.encryptionMode == CryptoMode.STANDARD.key) {
@@ -432,7 +434,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                         }
                     }
 
-                    // ✨ 2. 然后，我们只用 onTouch 来“监听”手势，特别是长按
+                    // ✨ 2. 然后，我们只用 onTouch 来"监听"手势，特别是长按
                     var longPressJob: Job? = null
                     setOnTouchListener { v, event -> // 'v' 就是这个 View 本身
                         // 只在标准模式下才需要区分长按和短按
@@ -448,11 +450,11 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                                 }
 
                                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                                    // 如果手指抬起时，长按任务还在“准备中”...
+                                    // 如果手指抬起时，长按任务还在"准备中"...
                                     if (longPressJob?.isActive == true) {
                                         // ...说明这是一个短按，取消长按任务...
                                         longPressJob.cancel()
-                                        // ✨ ...然后“按响”那个标准的门铃！
+                                        // ✨ ...然后"按响"那个标准的门铃！
                                         v.performClick()
                                     }
                                     // 如果长按任务已经执行或被取消，这里就什么都不做
@@ -463,7 +465,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                             }
                         } else {
                             // 在沉浸模式下，我们让标准的 OnClickListener 去处理所有点击
-                            // onTouch 只需要返回 false，表示“我不管，让别人来处理”
+                            // onTouch 只需要返回 false，表示"我不管，让别人来处理"
                             false
                         }
                     }
@@ -559,7 +561,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
      * @param text 要设置的文本。
      */
     protected fun performSetText(nodeInfo: AccessibilityNodeInfo, text: String): Boolean {
-        // 检查节点是否支持“设置文本”这个动作。
+        // 检查节点是否支持"设置文本"这个动作。
         if (nodeInfo.actionList.contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_TEXT)) {
             Log.d(tag, "准备设置加密文本到输入框")
             // 1. 创建一个 Bundle (包裹)，用来存放我们要设置的文本。
@@ -568,7 +570,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                 AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text
             )
 
-            // 2. 对节点下达“执行设置文本”的命令，并把装有文本的“包裹”递给它。
+            // 2. 对节点下达"执行设置文本"的命令，并把装有文本的"包裹"递给它。
             if (!nodeInfo.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)) {
                 Log.e(tag, "performAction(ACTION_SET_TEXT) 直接返回失败。")
                 return false
@@ -630,7 +632,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
         if (node.viewIdResourceName == inputId) {
             val currentTime = System.currentTimeMillis()
 
-            // 2. 检查距离上次点击的时间，是否在我们的“双击”阈值之内
+            // 2. 检查距离上次点击的时间，是否在我们的"双击"阈值之内
             if (currentTime - lastInputClickTime < currentService.showAttachmentViewDoubleClickThreshold) {
                 Log.d(tag, "检测到输入框双击事件, 准备启动发送附件Activity")
                 showAttachmentDialog()
@@ -659,7 +661,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     }
 
     /**
-     * 创建并显示“发送附件”对话框
+     * 创建并显示"发送附件"对话框
      */
     private fun showAttachmentDialog() {
         // 每次创建的时候就重置attachmentState
@@ -691,7 +693,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     }
 
     /**
-     * ✨ 核心的、可复用的“设置文本并发送”函数
+     * ✨ 核心的、可复用的"设置文本并发送"函数
      * 它封装了查找节点、设置文本、轮询查找按钮并点击的完整健壮流程。
      * @param textToSet 需要设置到输入框的最终文本。
      */
@@ -755,12 +757,12 @@ abstract class BaseChatAppHandler : ChatAppHandler {
         currentService.serviceScope.launch(Dispatchers.IO) {
             try {
                 val fileSize = getFileSize(uri)
-                // 判断文件大小。当前接口传图片最大支持10M。
-                if (fileSize > 1024 * 1024 * 10) {
+                // 判断文件大小。当前接口最大支持50M。
+                if (fileSize > CryptoUploader.MAX_FILE_SIZE) {
                     showToast(
                         currentService.getString(
                             R.string.crypto_attachment_file_too_large,
-                            10
+                            CryptoUploader.MAX_FILE_SIZE / (1024 * 1024)
                         )
                     )
                     return@launch
@@ -862,7 +864,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     }
 
     /**
-     * ✨ 核心的“解密引擎”函数
+     * ✨ 核心的"解密引擎"函数
      * 它的职责单一，就是尝试解密一段文本。
      * @param textToDecrypt 可能包含密文的原始字符串。
      * @return 如果解密成功，返回明文字符串；否则返回null。
@@ -870,7 +872,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     private fun tryDecryptingText(textToDecrypt: String?): String? {
         if (textToDecrypt == null) return null
         val currentService = service ?: return null
-        // 1. 先判断是否真的包含“猫语”，避免不必要的计算
+        // 1. 先判断是否真的包含"猫语"，避免不必要的计算
         if (!textToDecrypt.containsCiphertext()) {
             return null
         }

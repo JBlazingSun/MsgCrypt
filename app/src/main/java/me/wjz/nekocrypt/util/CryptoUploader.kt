@@ -199,6 +199,8 @@ object CryptoUploader {
     /**
      * 上传字节数组（当前主用版本）
      * 流程：加密 → GIF伪装 → 计算MD5 → 获取凭证 → 上传OSS → 返回URL
+     *
+     * 进度分配：加密 0→10%，获取凭证 10→20%，上传OSS 20→100%
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun upload(
@@ -212,22 +214,30 @@ object CryptoUploader {
 
         return suspendCancellableCoroutine { continuation ->
             try {
-                // 1. 加密 + GIF 伪装
+                // 1. 加密 + GIF 伪装 (进度 0→10%)
+                onProcess(0)
                 Log.d(TAG, "加密中...")
                 val encryptedBytes = CryptoManager.encrypt(fileBytes, encryptionKey)
                 val payload = SINGLE_PIXEL_GIF_BUFFER + encryptedBytes
+                onProcess(10)
                 Log.d(TAG, "加密完成, 伪装后大小: ${payload.size} bytes (含GIF头 ${SINGLE_PIXEL_GIF_BUFFER.size} bytes)")
 
                 // 2. 计算 MD5
                 val fileMd5 = computeMd5(payload)
                 Log.d(TAG, "payload MD5: $fileMd5")
 
-                // 3. 获取上传凭证
+                // 3. 获取上传凭证 (进度 10→20%)
+                onProcess(10)
                 val params = getUploadParams(fileMd5, "gif")
+                onProcess(20)
 
-                // 4. 上传到 OSS
+                // 4. 上传到 OSS (进度 20→100%，由 ProgressRequestBody 驱动)
                 val uploadFileName = "$fileName.gif"
-                val fileUrl = uploadToOss(params, payload, uploadFileName, "gif", onProcess)
+                // 将 0-100 的内部进度映射到 20-100 的外部进度
+                val ossOnProcess: (Int) -> Unit = { internalProgress ->
+                    onProcess(20 + (internalProgress * 80 / 100))
+                }
+                val fileUrl = uploadToOss(params, payload, uploadFileName, "gif", ossOnProcess)
 
                 // 5. 构造返回结果
                 if (fileUrl.isNotBlank()) {
@@ -254,7 +264,7 @@ object CryptoUploader {
 
     /**
      * 上传 Uri 文件（流式版本，目前未使用但保留）
-     * 流程：读取+加密到内存 → GIF伪装 → 计算MD5 → 获取凭证 → 上传OSS → 返回URL
+     * 进度分配：读取+加密 0→10%，获取凭证 10→20%，上传OSS 20→100%
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun upload(
@@ -267,6 +277,8 @@ object CryptoUploader {
         Log.d(TAG, "========== 开始上传(Uri) ==========")
         Log.d(TAG, "URI: $uri, 文件名: $fileName, 大小: $fileSize bytes")
 
+        onProcess(0)
+
         val inputStream = NekoCryptApp.instance.contentResolver.openInputStream(uri)
             ?: throw IOException("Failed to open input stream from URI")
 
@@ -274,20 +286,27 @@ object CryptoUploader {
         val fileBytes = inputStream.use { it.readBytes() }
         Log.d(TAG, "文件读取完成, 实际大小: ${fileBytes.size} bytes")
 
-        // 加密 + GIF 伪装
+        // 加密 + GIF 伪装 (进度 0→10%)
         val encryptedBytes = CryptoManager.encrypt(fileBytes, encryptionKey)
         val payload = SINGLE_PIXEL_GIF_BUFFER + encryptedBytes
+        onProcess(10)
 
         // 计算 MD5
         val fileMd5 = computeMd5(payload)
 
-        // 获取凭证 + 上传
+        // 获取凭证 (进度 10→20%)
+        val params = getUploadParams(fileMd5, "gif")
+        onProcess(20)
+
+        // 上传到 OSS (进度 20→100%)
+        val uploadFileName = "$fileName.gif"
+        val ossOnProcess: (Int) -> Unit = { internalProgress ->
+            onProcess(20 + (internalProgress * 80 / 100))
+        }
+
         return suspendCancellableCoroutine { continuation ->
             try {
-                val params = getUploadParams(fileMd5, "gif")
-                val uploadFileName = "$fileName.gif"
-
-                val fileUrl = uploadToOss(params, payload, uploadFileName, "gif", onProcess)
+                val fileUrl = uploadToOss(params, payload, uploadFileName, "gif", ossOnProcess)
 
                 if (fileUrl.isNotBlank()) {
                     val result = NCFileProtocol(

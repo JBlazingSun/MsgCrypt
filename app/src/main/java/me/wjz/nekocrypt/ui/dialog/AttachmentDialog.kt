@@ -2,6 +2,12 @@ package me.wjz.nekocrypt.ui.dialog
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -138,6 +144,27 @@ fun SendAttachmentDialog(
     }
 
     NekoCryptTheme(darkTheme = false) {
+        // 弹簧入场动画
+        var visible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { visible = true }
+
+        AnimatedVisibility(
+            visible = visible,
+            enter = scaleIn(
+                initialScale = 0.6f,
+                animationSpec = spring(
+                    dampingRatio = 0.55f,
+                    stiffness = 400f
+                )
+            ) + fadeIn(animationSpec = spring(dampingRatio = 0.8f)),
+            exit = scaleOut(
+                targetScale = 0.6f,
+                animationSpec = spring(
+                    dampingRatio = 0.7f,
+                    stiffness = 400f
+                )
+            ) + fadeOut()
+        ) {
         Box(modifier = Modifier.padding(8.dp)) {
             Card(
                 shape = RoundedCornerShape(24.dp),
@@ -261,6 +288,7 @@ fun SendAttachmentDialog(
                 }
             }
         }
+        } // AnimatedVisibility end
     }
 }
 

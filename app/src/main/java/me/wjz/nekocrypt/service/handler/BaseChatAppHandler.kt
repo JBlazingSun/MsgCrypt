@@ -97,6 +97,8 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     private var lastInputClickTime: Long = 0L
     private var filePickerJob: Job? = null // ✨ 新增一个Job来监听结果
     private var sendAttachmentDialogManager: NCWindowManager? = null
+    // 记录当前上传使用的缓存文件URI，对话框关闭时清理
+    private var pendingCacheUri: Uri? = null
 
     // --- ✨ 附件发送弹窗相关的新增状态 ---
     // 使用 Compose 的 State Delegate，这样当它们的值改变时，UI会自动更新
@@ -176,6 +178,7 @@ abstract class BaseChatAppHandler : ChatAppHandler {
         overlayManagementJob?.cancel()
         immersiveDecryptionJob?.cancel()
         filePickerJob?.cancel()
+        cleanupCacheFile()
         // 用一个副本做遍历避免删除时下标异常
         val managersToDismiss = immersiveDecryptionCache.values.toList()
         // 依次关闭所有弹窗
@@ -671,16 +674,20 @@ abstract class BaseChatAppHandler : ChatAppHandler {
 
         sendAttachmentDialogManager = NCWindowManager(
             context = currentService,
-            onDismissRequest = { sendAttachmentDialogManager = null },
+            onDismissRequest = {
+                sendAttachmentDialogManager = null
+                cleanupCacheFile()
+            },
             anchorRect = null
         ) {
             CompositionLocalProvider(
                 LocalDataStoreManager provides NekoCryptApp.instance.dataStoreManager
             ) {
                 SendAttachmentDialog(
-                    onDismissRequest = { sendAttachmentDialogManager?.dismiss() },
+                    onDismissRequest = {
+                        sendAttachmentDialogManager?.dismiss()
+                    },
                     onSendRequest = { url ->
-                        // 发送成功后，也关闭对话框
                         Log.d(tag, "准备发送URL: $url")
                         setTextAndSend(url)
                         sendAttachmentDialogManager?.dismiss()
@@ -753,6 +760,10 @@ abstract class BaseChatAppHandler : ChatAppHandler {
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun startUpload(uri: Uri) {
         val currentService = service ?: return
+        // 记录缓存文件URI，对话框关闭时清理
+        if (uri.scheme == "file") {
+            pendingCacheUri = uri
+        }
         // 在IO线程读取文件
         currentService.serviceScope.launch(Dispatchers.IO) {
             try {
@@ -809,22 +820,6 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                     },
                 )
 
-//                val result : NCFileProtocol = CryptoUploader.upload(
-//                    uri = uri,
-//                    encryptionKey = currentService.currentKey,
-//                    fileName = getFileName(uri),
-//                    onProcess = { progressInt ->
-//                        // 将 0-100 的 Int 进度转换为 0.0-1.0 的 Float
-//                        val progressFloat = progressInt / 100.0f
-//                        // 在主线程更新UI
-//                        launch(Dispatchers.Main) {
-//                            updateAttachmentState { currentState ->
-//                                currentState.copy(progress = progressFloat)
-//                            }
-//                        }
-//                    },
-//                )
-
                 // 4. 上传成功，更新UI
                 updateAttachmentState { currentState ->
                     currentState.copy(
@@ -844,22 +839,9 @@ abstract class BaseChatAppHandler : ChatAppHandler {
                     )
                 )
                 resetAttachmentState()
-            } finally {
-                // 无论文件上传成功与否，如果scheme是file，说明是我们创建的临时文件，删掉
-                if (uri.scheme == "file") {
-                    uri.path?.let { path ->
-                        val cacheFile = File(path)
-                        if (cacheFile.exists()) {
-                            val deleted = cacheFile.delete()
-                            if (deleted) {
-                                Log.d(tag, "✅ 临时缓存文件已成功删除: $path")
-                            } else {
-                                Log.w(tag, "⚠️ 临时缓存文件删除失败: $path")
-                            }
-                        }
-                    }
-                }
             }
+            // 不在 finally 里删缓存文件，因为预览图还要用
+            // 缓存文件在对话框关闭时统一清理
         }
     }
 
@@ -910,5 +892,19 @@ abstract class BaseChatAppHandler : ChatAppHandler {
         withContext(Dispatchers.Main) {
             Toast.makeText(service, string, duration).show()
         }
+    }
+
+    /**
+     * 清理上传使用的缓存文件
+     */
+    private fun cleanupCacheFile() {
+        pendingCacheUri?.path?.let { path ->
+            val cacheFile = File(path)
+            if (cacheFile.exists()) {
+                val deleted = cacheFile.delete()
+                Log.d(tag, if (deleted) "缓存文件已清理: $path" else "缓存文件删除失败: $path")
+            }
+        }
+        pendingCacheUri = null
     }
 }
